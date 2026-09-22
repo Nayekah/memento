@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: memento
+      POSTGRES_USER: memento
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memento -d memento"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      target: api
+    image: memento-api:local
+    command: ["api"]
+    environment:
+      DATABASE_URL: postgresql://memento:${POSTGRES_PASSWORD}@postgres:5432/memento?sslmode=disable
+      TOKEN_SECRET: ${TOKEN_SECRET:?required}
+      SUBMISSION_RATE_PER_MINUTE: ${SUBMISSION_RATE_PER_MINUTE:-8}
+    expose:
+      - "8067"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?required}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: worker
+    image: memento-worker:local
+    command: ["worker"]
+    user: "0:0"
+    environment:
+      DATABASE_URL: postgresql://memento:${POSTGRES_PASSWORD}@postgres:5432/memento?sslmode=disable
+      WORK_DIR: /worker-work
+      DOCKER_WORK_DIR: ${WORK_DIR:?required}
+      GRADER_IMAGE: memento-datalab-grader:local
+    volumes:
+      - type: bind
+        source: ${WORK_DIR:?required}
+        target: /worker-work
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grader-image:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile.grader
+    image: memento-datalab-grader:local
+    profiles: ["build-only"]
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,16 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential gcc-multilib libc6-dev-i386 perl coreutils \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 grader
+
+COPY sandbox/src /opt/memento/src
+COPY backend/grader/grade.sh /usr/local/bin/grade
+RUN chmod 0755 /opt/memento/src/dlc /opt/memento/src/driver.pl /usr/local/bin/grade
+
+USER grader
+ENTRYPOINT ["/usr/local/bin/grade"]
