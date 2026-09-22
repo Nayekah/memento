@@ -163,13 +163,13 @@ bash scripts/smoke-test.sh
 ## Authors
 
 <div align="center">
-  <table>
+  <table width="520">
     <tr>
-      <th>Name</th>
-      <th>GitHub</th>
+      <th width="50%">Name</th>
+      <th width="50%">GitHub</th>
     </tr>
     <tr align="center">
-      <td>Nayaka</td>
+      <td width="50%">Nayaka</td>
       <td>
         <a href="https://github.com/Nayekah">
           <img src="https://github.com/Nayekah.png" width="48" alt="Nayekah" /><br/>
