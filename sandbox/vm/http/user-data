@@ -1,0 +1,22 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  timezone: Asia/Jakarta
+  ssh:
+    install-server: true
+  network:
+    version: 2
+    ethernets:
+      all-ethernet:
+        match:
+          name: "en*"
+        dhcp4: true
+  identity:
+    hostname: memento-data-lab
+    username: practicant
+    password: "$6$memento-lab$EvAxQOqonlm9ChsuzK8c97ZLwBcjiGzBjvSoiggsTDwcptFJMW5kBP3YUkM.c8pgU6cqpkfMTCSp3jz/Kpu1n0"
+  late-commands:
+    - curtin in-target --target=/target -- /usr/sbin/usermod -aG sudo practicant
