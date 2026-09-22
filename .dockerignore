@@ -1,0 +1,9 @@
+.git/
+.env
+backend/.env
+backend/data/
+sandbox/output-virtualbox/
+sandbox/output-vmware/
+sandbox/packer_cache/
+.vscode/
+.idea/

@@ -1,0 +1,11 @@
+{
+  "name": "memento",
+  "private": true,
+  "scripts": {
+    "lint": "bash scripts/lint.sh",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

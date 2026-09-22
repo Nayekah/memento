@@ -1,0 +1,14 @@
+.env
+*.env
+!*.env.example
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/
+
+backend/data/
+sandbox/output-virtualbox/
+sandbox/output-vmware/
+sandbox/packer_cache/
