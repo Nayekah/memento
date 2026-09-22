@@ -13,7 +13,7 @@ EXPOSE 8067
 ENTRYPOINT ["memento"]
 CMD ["api"]
 
-FROM docker:27-cli AS worker
+FROM docker:29-cli AS worker
 COPY --from=build /memento /usr/local/bin/memento
 ENTRYPOINT ["memento"]
 CMD ["worker"]
