@@ -5,9 +5,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/hex"
+	"encoding/base32"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,7 +16,12 @@ import (
 func tokenFor(secret, student string) string {
 	mac := hmac.New(sha256.New, []byte(secret))
 	_, _ = mac.Write([]byte(student))
-	return hex.EncodeToString(mac.Sum(nil))
+	compact := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(mac.Sum(nil)[:8])[:12]
+	return compact[:4] + "-" + compact[4:8] + "-" + compact[8:]
+}
+
+func normalizeToken(token string) string {
+	return strings.ToUpper(strings.ReplaceAll(token, "-", ""))
 }
 
 func authenticate(r *http.Request, cfg config) (string, error) {
@@ -23,8 +29,9 @@ func authenticate(r *http.Request, cfg config) (string, error) {
 	if !studentIDPattern.MatchString(student) {
 		return "", errors.New("invalid student identifier")
 	}
-	token := r.Header.Get("X-Memento-Token")
-	if subtle.ConstantTimeCompare([]byte(token), []byte(tokenFor(cfg.secret, student))) != 1 {
+	token := normalizeToken(r.Header.Get("X-Memento-Token"))
+	expected := normalizeToken(tokenFor(cfg.secret, student))
+	if subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
 		return "", errors.New("invalid submission token")
 	}
 	return student, nil
