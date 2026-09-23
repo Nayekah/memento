@@ -25,6 +25,12 @@
 
 ## Overview
 
+<p align="center">
+  <img width="1024" height="768" alt="VirtualBox_Memento Lab Local Test_23_09_2026_18_17_43" src="https://github.com/user-attachments/assets/f08d7428-094c-488f-8fc3-1548185cf327" />
+  <img width="1024" height="768" alt="VirtualBox_Memento Lab Local Test_23_09_2026_18_16_13" src="https://github.com/user-attachments/assets/6ea3494b-bd17-488b-9570-9208f3270752" />
+</p>
+
+
 Memento delivers the same preconfigured OVA to every student while creating a
 separate Linux account and workspace at first boot. Students edit and submit
 only `bits.c`; the backend stores submissions in PostgreSQL and grades them in
