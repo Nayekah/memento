@@ -1,0 +1,190 @@
+#!/bin/bash
+set -euo pipefail
+
+template=/usr/local/share/memento/bits.c.template
+wallpaper=/usr/local/share/memento/wallpaper.jpg
+font=/usr/local/share/fonts/JetBrainsMono-Regular.ttf
+state=/tmp/memento/state/student_id
+
+if [ -r "$state" ]; then
+    student_id=$(cat "$state")
+    if id "$student_id" >/dev/null 2>&1; then
+        exec login -f "$student_id"
+    fi
+fi
+
+banner() {
+    cat <<'BANNER'
+                   : :                                 
+             :-=-:-***===:                             
+           -=: .-=:                                    
+         .*.  =-                                       
+         %   *.                     .:--:.--:::        
+         =  -=                 .--:-:   :=-:-::        
+         *:  #          -=*:.=-:     ---:              
+          -=.:#        =:  =*     :**.                 
+            :==#--::==:-    =.    .:=-=-.              
+          .-:--::.           -.         :*--.          
+        ---   -               =        .: -.---.
+      :=.   .#:        -       =         #=-   -=.                            Praktikum II2130
+     =-  .-=:.-:      .%=    .:::::-::.:.   ::.  -=.                    Sistem dan Arsitektur Komputer   
+    #:  :#*   : :::==.##-    :- %=::=::::.   .**--:-=             
+   -:  *@-  .*:.=-:  *-::=    = =:- ::   -:: ::*: .-=%.
+   #  ##=..:=  -#   -.= ==    *- =-- #   .#:    =:   ..
+  =:  --   *: ==.  -.:. ==   :==:* .- *   =:-    *     
+  =   =  .=* =.= .*::=.  %   .= =:  .--   .:.-   .*    
+  =. -. .* -= :  -:  =.. -:  =  =#:::-*.   =::=.  #    
+  .= = .-==-. . ::  =     =  -  #@%#*##=   = @=-  ==     Dipersiapkan oleh                            Asisten Lab
+  :* :-= =@:   :*   -     = =   = --==:*   = *.** :=   
+  ==   = =*   .#=         =::  .*#%*--:== =- = .*. =     :'######::'####::'######::'########:'########:'########::
+   * --= =*  :#=*###==:   *-    #*-#- = - #% #   #:=     '##... ##:. ##::'##... ##:... ##..:: ##.....:: ##.... ##:
+   #--:-:*=  **==.=*%##=- -     :==- := =-==:#    *=      ##:::..::: ##:: ##:::..::::: ##:::: ##::::::: ##:::: ##:
+ -=.     =:= @. =*:.          :      .. =# .*=           . ######::: ##::. ######::::: ##:::: ######::: ########::
+=.  .::-::=*=*  -*        ::---     .*  #*  *=           :..... ##:: ##:::..... ##:::: ##:::: ##...:::: ##.. ##:::
+=   -   .::@%*#  *-       -  --  .:#-  =%.  ..           '##::: ##:: ##::'##::: ##:::: ##:::: ##::::::: ##::. ##::
+=:    .:.  =-:=*..%==-:.::.::::=-:*=  :@@                . ######::'####:. ######::::: ##:::: ########: ##:::. ##:
+ *       ::--=#--: =:=.   -=-==  =#=  ===                :......:::....:::......::::::..:::::........::..:::::..::
+ .#.     .   =-##:=.=..=. :=-=---**= ==-=              
+  :@:.   ..=-  -%#.::=-.-::::-== :%=::=.=              
+  %:     .*-     :%= :*=:-*::: -. *== %=-              
+ *.      .*##   :-.=#. -:  -:   * =# :=%               
+--       = *@    == :-  -:  ::  -.=. #-**.
+BANNER
+}
+
+while true; do
+    clear
+    banner
+    read -r -p 'Student ID: ' student_id
+    if [[ ! "$student_id" =~ ^[A-Za-z0-9._-]{1,64}$ ]]; then
+        echo 'Invalid student ID. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    read -r -s -p 'Token: ' token
+    echo
+    if [ -z "$token" ]; then
+        echo 'Token is required. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    device_id=$(tr -d '-' </sys/class/dmi/id/product_uuid 2>/dev/null | tr '[:upper:]' '[:lower:]')
+    if [[ ! "$device_id" =~ ^[a-f0-9]{32}$ ]]; then
+        echo 'Unable to identify this VM. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    if ! response=$(curl --cacert /usr/local/etc/ssl/certs/ca-certificates.crt --fail-with-body --silent --show-error --connect-timeout 10 --max-time 30 -H "X-Memento-Student: $student_id" -H "X-Memento-Token: $token" -H 'Content-Type: application/json' --data "{\"device_id\":\"$device_id\"}" '__BACKEND_URL__/api/v1/vm-activation'); then
+        echo
+        echo "Activation failed: $response"
+        echo 'Check the network connection, student ID, and token. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    home="/tmp/memento/homes/$student_id"
+    if ! id "$student_id" >/dev/null 2>&1 && ! adduser -D "$student_id"; then
+        echo 'Unable to create the Linux account. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    passwd_file=$(mktemp)
+    if ! awk -F: -v user="$student_id" -v home="$home" 'BEGIN { OFS=FS } $1 == user { $6=home; $7="/bin/bash" } { print }' /etc/passwd >"$passwd_file" || ! cat "$passwd_file" >/etc/passwd; then
+        rm -f "$passwd_file"
+        echo 'Unable to configure the Linux account. Press Enter to try again.'
+        read -r
+        continue
+    fi
+    rm -f "$passwd_file"
+    student_group=$(id -gn "$student_id")
+    install -d -o "$student_id" -g "$student_group" -m 0700 "$home/.config/memento" "$home/memento" "$home/.config/i3"
+    install -o "$student_id" -g "$student_group" -m 0644 "$template" "$home/memento/bits.c"
+    install -o "$student_id" -g "$student_group" -m 0644 "$wallpaper" "$home/.config/memento/wallpaper.jpg"
+    install -o "$student_id" -g "$student_group" -m 0644 "$font" "$home/.config/memento/JetBrainsMono-Regular.ttf"
+    cat >"$home/.config/memento/auth.env" <<AUTH
+STUDENT_ID='$student_id'
+TOKEN='$token'
+BACKEND_URL='__BACKEND_URL__'
+AUTH
+    cat >"$home/.Xdefaults" <<'XRESOURCES'
+URxvt*scrollBar: false
+URxvt*transparent: true
+URxvt*shading: 25
+URxvt*foreground: #cdd6f4
+URxvt*background: #1e1e2e
+URxvt*cursorColor: #f5e0dc
+URxvt*font: xft:JetBrains Mono:size=14
+URxvt*internalBorder: 12
+URxvt*color0: #45475a
+URxvt*color1: #f38ba8
+URxvt*color2: #a6e3a1
+URxvt*color3: #f9e2af
+URxvt*color4: #89b4fa
+URxvt*color5: #f5c2e7
+URxvt*color6: #94e2d5
+URxvt*color7: #bac2de
+URxvt*color8: #585b70
+URxvt*color9: #f38ba8
+URxvt*color10: #a6e3a1
+URxvt*color11: #f9e2af
+URxvt*color12: #89b4fa
+URxvt*color13: #f5c2e7
+URxvt*color14: #94e2d5
+URxvt*color15: #a6adc8
+XRESOURCES
+    cat >"$home/.config/i3/config" <<'I3'
+set $mod Mod4
+font pango:JetBrains Mono 10
+focus_follows_mouse no
+exec --no-startup-id /usr/local/bin/urxvt -name memento-terminal -title 'Lab Shell' -tr -sh 45 -e bash -l
+for_window [instance="memento-terminal"] floating disable
+for_window [instance="memento-terminal"] border normal 1
+bindsym $mod+Return exec --no-startup-id /usr/local/bin/urxvt -name memento-terminal -title 'Lab Shell' -tr -sh 45 -e bash -l
+bindsym $mod+Shift+Return kill
+bar { mode invisible }
+I3
+    cat >"$home/.xinitrc" <<'XSESSION'
+#!/bin/sh
+xrdb -merge "$HOME/.Xdefaults"
+fc-cache -f >/dev/null 2>&1 || true
+feh --bg-fill "$HOME/.config/memento/wallpaper.jpg" &
+LD_LIBRARY_PATH=/usr/local/lib/lab_sister/source/libconfig /usr/local/lib/lab_sister/source/picom/picom --config /usr/local/lib/lab_sister/source/picom/picom.conf &
+exec i3 -c "$HOME/.config/i3/config"
+XSESSION
+    cp "$home/.xinitrc" "$home/.xsession"
+    cat >"$home/.bash_profile" <<'PROFILE'
+[ -r "$HOME/.profile" ] && . "$HOME/.profile"
+if [ -z "${DISPLAY:-}" ] && [ "$(tty)" = /dev/tty1 ]; then
+    startx || echo 'The graphical shell ended. Continuing in the terminal.'
+fi
+PROFILE
+    cat >"$home/.vimrc" <<'VIMRC'
+set nocompatible
+syntax enable
+filetype plugin indent on
+set background=dark
+highlight Normal ctermfg=7 ctermbg=NONE
+highlight Comment ctermfg=8
+highlight Constant ctermfg=3
+highlight Identifier ctermfg=6
+highlight Statement ctermfg=5
+highlight PreProc ctermfg=4
+highlight Type ctermfg=2
+highlight Special ctermfg=1
+VIMRC
+    cat >"$home/.profile" <<'PROFILE'
+set -a
+. "$HOME/.config/memento/auth.env"
+set +a
+export VIMRUNTIME=/usr/local/lib/lab_sister/source/vim
+cd "$HOME/memento"
+PROFILE
+    chown -R "$student_id:$student_group" "$home"
+    chmod 0600 "$home/.config/memento/auth.env"
+    chmod 0700 "$home/.xinitrc" "$home/.xsession"
+    install -d -m 0700 "$(dirname "$state")"
+    printf '%s\n' "$student_id" >"$state"
+    clear
+    echo 'Yay, setup completed successfully! Good luck with the lab! :3'
+    sleep 1
+    exec login -f "$student_id"
+done

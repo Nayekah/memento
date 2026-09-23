@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+
+source_file="$HOME/memento/bits.c"
+[ -f "$source_file" ] && [ ! -L "$source_file" ] || { echo "Required source file not found: $source_file" >&2; exit 1; }
+set -a
+. "$HOME/.config/memento/auth.env"
+set +a
+response=$(curl --fail-with-body --silent --show-error -H "X-Memento-Student: $STUDENT_ID" -H "X-Memento-Token: $TOKEN" -F "source=@${source_file};filename=bits.c;type=text/x-c" "$BACKEND_URL/api/v1/submissions")
+submission_id=$(printf '%s\n' "$response" | sed -n 's/.*"id":"\([a-f0-9]\{24\}\)".*/\1/p')
+[ -n "$submission_id" ] || { echo "Unrecognized submission response: $response" >&2; exit 1; }
+printf 'Submission ID: %s\nVerdict: QUEUED\n' "$submission_id"

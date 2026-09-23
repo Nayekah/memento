@@ -1,9 +1,1 @@
-output-virtualbox/
-output-vmware/
-packer_cache/
-*.box
-*.ova
-*.vmdk
-*.vmx
-
-*.pkrvars.hcl
+output/

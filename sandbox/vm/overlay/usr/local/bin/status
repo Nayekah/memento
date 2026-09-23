@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+submission_id=${1:?usage: status SUBMISSION_ID}
+set -a
+. "$HOME/.config/memento/auth.env"
+set +a
+curl --fail-with-body --silent --show-error -H "X-Memento-Student: $STUDENT_ID" -H "X-Memento-Token: $TOKEN" "$BACKEND_URL/api/v1/submissions/$submission_id/report"

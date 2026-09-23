@@ -9,6 +9,4 @@ Thumbs.db
 node_modules/
 
 backend/data/
-sandbox/output-virtualbox/
-sandbox/output-vmware/
-sandbox/packer_cache/
+sandbox/output/

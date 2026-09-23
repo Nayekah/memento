@@ -35,7 +35,10 @@ fi
 
 if command -v shellcheck >/dev/null 2>&1; then
     shellcheck backend/grader/grade.sh backend/scripts/smoke-test.sh \
-        sandbox/scripts/build-vm.sh sandbox/vm/scripts/provision.sh
+        sandbox/scripts/build-iso.sh sandbox/vm/overlay/sbin/autologin \
+        sandbox/vm/overlay/sbin/memento-login \
+        sandbox/vm/overlay/usr/local/bin/submit \
+        sandbox/vm/overlay/usr/local/bin/status
 else
     echo 'ShellCheck is not installed; shell linting was skipped.'
 fi
