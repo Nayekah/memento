@@ -70,9 +70,11 @@ source address:
 - `POST /api/v1/submissions`
 - `GET /api/v1/submissions/{id}`
 - `GET /api/v1/submissions/{id}/report`
+- `GET /api/v1/leaderboard`
 
-The global leaderboard, system status, health check, PostgreSQL, and the
-grader are not part of the student network.
+The system status, health check, PostgreSQL, and the grader are not part of the
+student network. The leaderboard remains VPN-only but is intentionally
+available to students.
 
 ## Provision a student
 
@@ -134,8 +136,8 @@ curl -i https://grader.example.edu/health
 curl -i https://grader.example.edu/api/v1/leaderboard
 ```
 
-The DNS query should return `10.66.0.1`; `/health` should be `403` because it
-is not a student route; and `/leaderboard` should also be `404`/`403`. A real
+The DNS query should return `10.66.0.1`; `/health` should be `404` because it
+is not a student route; and `/leaderboard` should succeed over VPN. A real
 authenticated submission and report request should work. From a public,
 non-VPN connection, every API request should return `403`.
 

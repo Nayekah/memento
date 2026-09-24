@@ -4,9 +4,9 @@
     @vpn remote_ip {$VPN_SUBNET}
     handle @vpn {
         # Students need activation, submission, and their own submission
-        # status/report. Admin, health, and global leaderboard routes remain
-        # unavailable from the student network.
-        @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/*
+        # status/report, and the VPN-only global leaderboard. Admin, health,
+        # system status, and other routes remain unavailable to students.
+        @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/* /api/v1/leaderboard
         handle @allowed {
             reverse_proxy api:8067
         }
