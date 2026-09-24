@@ -67,7 +67,7 @@ and `status` commands.
 - PostgreSQL queue with concurrent workers and `FOR UPDATE SKIP LOCKED`
 - Per-student submission rate limit
 - Sandboxed grading with no network, restricted resources, and a read-only root filesystem
-- Public HTTPS endpoint with an internal-only API and PostgreSQL service
+- Full-tunnel WireGuard exam network with an API-only allowlist
 
 ## Repository Layout
 
@@ -90,6 +90,7 @@ Requirements:
 - Docker Engine or Docker Desktop
 - A public DNS record for your chosen domain
 - Inbound TCP ports `80` and `443`
+- Inbound UDP port `51820` for WireGuard
 - A Linux directory for temporary grader files
 
 ```bash
@@ -101,7 +102,8 @@ docker compose up -d
 ```
 
 Caddy obtains a TLS certificate for the configured domain and forwards HTTPS requests
-to the Go API on its internal port, `8067`. PostgreSQL is never published.
+to the Go API on its internal port, `8067`. Student VPN traffic is limited to the
+grading API; PostgreSQL is never published.
 
 Register a student and generate a private activation token:
 
@@ -113,17 +115,21 @@ docker compose run --rm api token 2200012345
 See [backend/README.md](backend/README.md) for deployment, queue, API, and
 database details.
 
-### Student VM
+### Student VM and exam network
 
-Build an OVA with the public backend URL:
+Build the student VM with the public backend URL, then import that student's
+WireGuard profile on the managed laptop:
 
 ```bash
 cd sandbox
-bash scripts/build-vm.sh \
-  --iso /absolute/path/ubuntu-live-server-amd64.iso \
-  --checksum sha256:PASTE_THE_OFFICIAL_SHA256_HERE \
+bash scripts/build-iso.sh \
+  --source-iso /absolute/path/orkom.iso \
   --backend-url https://grader.example.edu
 ```
+
+Create and distribute the profile with [wireguard/README.md](wireguard/README.md).
+The profile is a full tunnel, so only the allowlisted grading API is reachable
+while WireGuard is connected.
 
 On first boot, the student enters their student ID, activation token, and a new
 Linux password. They then work only with:
@@ -135,8 +141,8 @@ submit bits.c
 status SUBMISSION_ID
 ```
 
-See [sandbox/README.md](sandbox/README.md) for VirtualBox, VMware, and VM
-activation details.
+See [sandbox/README.md](sandbox/README.md) and [wireguard/README.md](wireguard/README.md)
+for VirtualBox, VMware, VM activation, and exam-network setup details.
 
 ## Grading Flow
 

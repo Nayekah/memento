@@ -42,8 +42,13 @@ docker compose up -d
 ```
 
 Point the DNS A/AAAA records for `DOMAIN` to this server and allow inbound TCP
-ports `80` and `443`. Caddy manages TLS and forwards requests internally to the
-API on port `8067`. PostgreSQL is not published.
+ports `80` and `443`, plus UDP `51820` for WireGuard. Caddy manages TLS and
+forwards requests internally to the API on port `8067`. Public clients receive
+`403`; student API routes require a source address from `VPN_SUBNET`. PostgreSQL
+is not published.
+
+See [../wireguard/README.md](../wireguard/README.md) for the full-tunnel,
+default-deny exam network and per-student peer workflow.
 
 ## Operations
 

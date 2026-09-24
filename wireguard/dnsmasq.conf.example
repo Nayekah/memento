@@ -1,0 +1,8 @@
+# Bind DNS only to the VPN interface. Do not configure an upstream resolver:
+# any hostname other than the grading API should fail to resolve for peers.
+interface=wg0
+listen-address=10.66.0.1
+bind-interfaces
+no-resolv
+no-hosts
+address=/grader.example.edu/10.66.0.1

@@ -1,3 +1,17 @@
 {$DOMAIN} {
-    reverse_proxy api:8067
+    # The VPN is the exam network boundary. Public HTTPS reaches this proxy
+    # but receives 403; only clients in VPN_SUBNET can reach the API.
+    @vpn remote_ip {$VPN_SUBNET}
+    handle @vpn {
+        # Students need activation, submission, and their own submission
+        # status/report. Admin, health, and global leaderboard routes remain
+        # unavailable from the student network.
+        @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/*
+        handle @allowed {
+            reverse_proxy api:8067
+        }
+        respond 404
+    }
+
+    respond 403
 }
