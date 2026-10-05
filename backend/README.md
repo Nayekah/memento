@@ -15,7 +15,7 @@ Student VM -> Caddy HTTPS proxy -> API -> PostgreSQL queue -> Worker -> Grader
 
 | Service | Responsibility |
 | --- | --- |
-| `proxy` | Caddy TLS termination and public HTTPS entry point |
+| `proxy` | Caddy TLS termination, scoreboard files, and public HTTPS entry point |
 | `api` | Activation, submission, report, and leaderboard endpoints |
 | `worker` | Concurrent queue consumer and grader launcher |
 | `postgres` | Persistent students, submissions, scores, and queue state |
@@ -31,15 +31,20 @@ Copy `.env.example` to `.env` and configure:
 | `POSTGRES_PASSWORD` | PostgreSQL password |
 | `WORK_DIR` | Absolute Linux directory for temporary grader files |
 | `SUBMISSION_RATE_PER_MINUTE` | Per-student submission limit; `0` disables it |
+| `SCOREBOARD_CONFIG_DIR` | Host directory with the scoreboard `config.json`, backgrounds, and music; defaults to `./scoreboard-config` |
 
 ## Deployment
 
 ```bash
 cp .env.example .env
-mkdir -p /srv/memento/grader-work
-docker compose build grader-image api worker
+mkdir -p /srv/memento/grader-work scoreboard-config
+cp ../frontend/config.example.json scoreboard-config/config.json
+docker compose build grader-image api worker proxy
 docker compose up -d
 ```
+
+The proxy image contains the built scoreboard. Caddy serves it at `/`, the
+mounted settings and media at `/config/`, and forwards `/api/*` to the API.
 
 Point the DNS A/AAAA records for `DOMAIN` to this server and allow inbound TCP
 ports `80` and `443`. Caddy manages TLS and forwards requests internally to the

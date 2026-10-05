@@ -1,0 +1,36 @@
+{
+  "title": "Praktikum 1 II2130",
+  "motd": "Only your source file counts. Submit early, submit often, and read the verdict before you panic.",
+  "deadline": "2026-10-16T13:00:00+07:00",
+  "practicum": "datalab",
+  "pageSize": 20,
+  "refreshSeconds": 15,
+  "practicums": [
+    {
+      "id": "datalab",
+      "name": "Praktikum 1 - Data Lab",
+      "endpoint": "/api/v1/leaderboard",
+      "scoreLabel": "PTS"
+    },
+    {
+      "id": "bomblab",
+      "name": "Praktikum 2 - Bomb Lab",
+      "endpoint": "/api/v1/practicums/bomblab/leaderboard",
+      "scoreLabel": "PTS"
+    }
+  ],
+  "backgrounds": [
+    {
+      "src": "backgrounds/example.webp",
+      "pos": "50% 30%",
+      "credit": "Art by the original artist"
+    }
+  ],
+  "music": [
+    {
+      "title": "Example track",
+      "artist": "Example artist",
+      "src": "music/example.mp3"
+    }
+  ]
+}

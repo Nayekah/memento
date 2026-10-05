@@ -32,7 +32,9 @@ services:
     restart: unless-stopped
 
   proxy:
-    image: caddy:2-alpine
+    build:
+      context: ../frontend
+    image: memento-proxy:local
     environment:
       DOMAIN: ${DOMAIN:?required}
     depends_on:
@@ -43,6 +45,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${SCOREBOARD_CONFIG_DIR:-./scoreboard-config}:/srv/config:ro
       - caddy-data:/data
       - caddy-config:/config
     restart: unless-stopped

@@ -10,3 +10,7 @@ node_modules/
 
 backend/data/
 sandbox/output/
+
+frontend/dist/
+frontend/public/config/
+backend/scoreboard-config/
