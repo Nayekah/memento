@@ -97,6 +97,9 @@ Background art and music are usually copyrighted. Credit the artist in
   once it has loaded. A track that fails to load is skipped.
 - Volume, shuffle, the collapsed player, and the remembered name are stored in
   the browser only.
+- On screens wider than 760 px the board, player, and buttons are drawn at 80%,
+  matching 80% browser zoom, while the background stays full size. Change
+  `--ui-scale` in `src/styles.css` to adjust it.
 
 | Key | Action |
 | --- | --- |

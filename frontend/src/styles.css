@@ -14,6 +14,8 @@
   --glass: 0.7;
   /* Shared by the title and the countdown so both are always the same size. */
   --display-size: clamp(22px, 4.7vw, 58px);
+  /* Desktop UI scale. 0.8 matches viewing the page at 80% browser zoom; the background is not scaled. */
+  --ui-scale: 0.8;
   color-scheme: dark;
 }
 
@@ -174,6 +176,10 @@ tr.hit { animation: flash 0.9s steps(6); }
 .actions button { display: flex; align-items: center; gap: 8px; background: #05050fec; color: var(--cyan); padding: 11px 13px; box-shadow: 0 0 0 3px var(--ink); }
 .actions button[aria-pressed="true"] { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
 .credit { margin: 0; font: 18px var(--vt); color: #fff; text-shadow: 0 1px 3px #000; }
+
+@media (min-width: 761px) {
+  .cab, .player, .actions { zoom: var(--ui-scale); }
+}
 
 @media (max-width: 760px) {
   .cab { margin-bottom: 300px; }
