@@ -65,14 +65,14 @@ h1 { margin: 0 0 14px; text-align: center; font: 400 clamp(22px, 4.7vw, 58px) / 
 .marquee span { display: inline-block; padding-left: 100%; animation: marquee 30s linear infinite; }
 @keyframes marquee { to { transform: translateX(-100%); } }
 
-.timer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 22px; }
+.timer { display: flex; flex-direction: column; align-items: center; gap: 18px; margin: 26px 0; }
 .timer small { font-size: clamp(9px, 1.4vw, 15px); color: var(--cyan); letter-spacing: 0.2em; text-align: center; }
-.timer b { font: 400 clamp(32px, 10.4vw, 118px) / 1 var(--px); color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 4px 4px 0 #8a3b00, -2px -2px 0 #000a; white-space: nowrap; }
+.timer b { font: 400 clamp(28px, 7vw, 80px) / 1 var(--px); color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0.05em 0.05em 0 #8a3b00, -0.025em -0.025em 0 #000a; white-space: nowrap; }
 .timer i { font-style: normal; }
 .timer.warn b { color: #ffb84d; }
 .timer.warn b i { animation: blink 1s steps(2) infinite; }
 .timer.crit b { color: var(--red); animation: blink 0.5s steps(2) infinite; }
-.timer.over b { color: var(--red); text-shadow: 4px 4px 0 #3b4fd8; }
+.timer.over b { color: var(--red); text-shadow: 0.05em 0.05em 0 #3b4fd8; }
 
 /* controls */
 button {
