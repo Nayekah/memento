@@ -84,9 +84,10 @@ Background art and music are usually copyrighted. Credit the artist in
 
 - The countdown turns amber below ten minutes, flashes red below one minute,
   and shows TIME UP at the deadline. Scores stay visible.
-- Searching covers every student, not only the visible rows. An exact name
-  match is remembered as "you": the HUD and a pinned strip show your rank, and
-  the strip jumps to your row.
+- Searching covers every student, not only the visible rows.
+- The pin button at the end of each row marks that student as "you": the HUD
+  and a pinned strip show your rank, and the strip jumps to your row. Click the
+  pin again, or the X on the strip, to unpin.
 - Rank changes since the previous poll show as `+n` or `-n`, and changed scores
   flash.
 - Every page load picks a random background and a random starting track; the

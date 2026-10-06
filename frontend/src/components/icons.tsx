@@ -31,6 +31,7 @@ const PREV = NEXT.map((row) => [...row].reverse().join(""));
 const SHUFFLE = ["......#..", "##...####", "..#.#..#.", "...#.....", "..#.#..#.", "##...####", "......#.."];
 const DICE = ["#######", "#.....#", "#.#.#.#", "#.....#", "#.#.#.#", "#.....#", "#######"];
 const EYE = ["..#####..", ".#.....#.", "#..###..#", ".#.....#.", "..#####.."];
+const PIN = [".#####.", "..###..", "..###..", ".#####.", "#######", "...#...", "...#...", "...#..."];
 const SPEAKER = ["...#....", "..##..#.", "####...#", "####.#.#", "####...#", "..##..#.", "...#...."];
 
 export const NoteIcon = (props: { className?: string }) => <Pixels rows={NOTE} {...props} />;
@@ -42,3 +43,4 @@ export const ShuffleIcon = () => <Pixels rows={SHUFFLE} />;
 export const DiceIcon = () => <Pixels rows={DICE} />;
 export const EyeIcon = () => <Pixels rows={EYE} />;
 export const SpeakerIcon = () => <Pixels rows={SPEAKER} />;
+export const PinIcon = () => <Pixels rows={PIN} />;

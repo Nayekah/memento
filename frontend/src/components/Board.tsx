@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import type { BoardState } from "../hooks/useLeaderboard";
 import { growLimit, page } from "../lib/board";
 import type { KeyedEntry } from "../lib/types";
+import { PinIcon } from "./icons";
 
 interface BoardProps {
   board: BoardState;
@@ -10,6 +11,8 @@ interface BoardProps {
   onQuery: (value: string) => void;
   me: KeyedEntry | undefined;
   onForgetMe: () => void;
+  /** Pins the student as "you", or unpins them if they are already pinned. */
+  onTogglePin: (entry: KeyedEntry) => void;
   pageSize: number;
   scoreLabel: string;
 }
@@ -51,7 +54,7 @@ function Bar({ entry }: { entry: KeyedEntry }) {
   );
 }
 
-export function Board({ board, query, onQuery, me, onForgetMe, pageSize, scoreLabel }: BoardProps) {
+export function Board({ board, query, onQuery, me, onForgetMe, onTogglePin, pageSize, scoreLabel }: BoardProps) {
   const [limit, setLimit] = useState(pageSize);
   const [intro, setIntro] = useState(true);
   const [jumpTo, setJumpTo] = useState<string | null>(null);
@@ -140,6 +143,9 @@ export function Board({ board, query, onQuery, me, onForgetMe, pageSize, scoreLa
                 <th scope="col" className="s">
                   {scoreLabel}
                 </th>
+                <th scope="col" className="p">
+                  <span className="sr-only">Pin</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -168,6 +174,18 @@ export function Board({ board, query, onQuery, me, onForgetMe, pageSize, scoreLa
                     </td>
                     <td className="s">
                       <Score value={entry.score} animate={intro} />
+                    </td>
+                    <td className="p">
+                      <button
+                        type="button"
+                        className="pin"
+                        onClick={() => onTogglePin(entry)}
+                        aria-pressed={me?.key === entry.key}
+                        aria-label={me?.key === entry.key ? `Unpin ${entry.name}` : `Pin ${entry.name} as you`}
+                        title={me?.key === entry.key ? "Unpin" : "Pin as you"}
+                      >
+                        <PinIcon />
+                      </button>
                     </td>
                   </tr>
                 );

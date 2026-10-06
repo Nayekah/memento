@@ -15,9 +15,22 @@ const entries = withKeys(
 );
 const ok: BoardState = { status: "ok", entries, updatedAt: new Date(), stale: false, deltas: new Map() };
 
-function Harness({ board = ok, meName = "" }: { board?: BoardState; meName?: string }) {
+function Harness({ board = ok, initialMe = "" }: { board?: BoardState; initialMe?: string }) {
   const [query, setQuery] = useState("");
-  return <Board board={board} query={query} onQuery={setQuery} me={findMe(board.entries, meName)} onForgetMe={() => {}} pageSize={20} scoreLabel="PTS" />;
+  const [meName, setMeName] = useState(initialMe);
+  const me = findMe(board.entries, meName);
+  return (
+    <Board
+      board={board}
+      query={query}
+      onQuery={setQuery}
+      me={me}
+      onForgetMe={() => setMeName("")}
+      onTogglePin={(entry) => setMeName(me?.key === entry.key ? "" : entry.name)}
+      pageSize={20}
+      scoreLabel="PTS"
+    />
+  );
 }
 
 const bodyRows = () => document.querySelectorAll("tbody tr").length;
@@ -51,7 +64,7 @@ describe("Board with 130 students", () => {
   });
 
   it("pins the YOU strip and expands the list to reach the student's row", () => {
-    render(<Harness meName="student_099" />);
+    render(<Harness initialMe="student_099" />);
     expect(screen.getByText("YOU")).toBeTruthy();
     expect(bodyRows()).toBe(20);
     act(() => {
@@ -81,5 +94,34 @@ describe("Board with 130 students", () => {
   ] as [BoardState, string][])("renders the %#th status message", (board, message) => {
     render(<Harness board={board} />);
     expect(screen.getByText(message)).toBeTruthy();
+  });
+  it("pins a student with the row's pin button and unpins with a second click", () => {
+    render(<Harness />);
+    expect(screen.queryByText("YOU")).toBeNull();
+    const pin = screen.getByRole("button", { name: "Pin student_005 as you" });
+    expect(pin.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(pin);
+    expect(screen.getByText("YOU")).toBeTruthy();
+    expect(document.querySelector("tr.me")?.getAttribute("data-key")).toBe("student_005#0");
+    const unpin = screen.getByRole("button", { name: "Unpin student_005" });
+    expect(unpin.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(unpin);
+    expect(screen.queryByText("YOU")).toBeNull();
+    expect(document.querySelector("tr.me")).toBeNull();
+  });
+
+  it("moves the pin when another student is pinned", () => {
+    render(<Harness initialMe="student_002" />);
+    fireEvent.click(screen.getByRole("button", { name: "Pin student_007 as you" }));
+    expect(document.querySelectorAll("tr.me")).toHaveLength(1);
+    expect(document.querySelector("tr.me")?.getAttribute("data-key")).toBe("student_007#0");
+    expect(screen.getByRole("button", { name: "Pin student_002 as you" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("keeps the pin while searching for someone else", () => {
+    render(<Harness initialMe="student_003" />);
+    fireEvent.change(screen.getByLabelText("Find a name"), { target: { value: "student_120" } });
+    expect(screen.getByText("YOU")).toBeTruthy();
+    expect(bodyRows()).toBe(1);
   });
 });

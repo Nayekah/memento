@@ -112,6 +112,11 @@ td.r { width: clamp(70px, 10vw, 118px); color: #aaaae6; white-space: nowrap; }
 td.n { max-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
 td.s { width: clamp(48px, 7vw, 84px); }
 td.b, th.b { width: 34%; }
+td.p, th.p { width: 48px; padding-left: 2px; padding-right: 0; text-align: right; }
+.pin { min-width: 32px; min-height: 32px; padding: 6px 7px; background: transparent; border: 2px solid transparent; color: #8a8ad0; }
+.pin .pix { height: 14px; margin: 0 auto; }
+.pin:hover, .pin:focus-visible { color: var(--pink); border-color: var(--line); background: transparent; }
+.pin[aria-pressed="true"] { color: var(--pink); background: #ff7ac830; border-color: var(--pink); }
 tr.intro { animation: enter 0.35s ease both; animation-delay: calc(var(--i) * 35ms); }
 @keyframes enter { from { opacity: 0; transform: translateX(-18px); } }
 tr.t1 td { color: var(--gold); }
@@ -177,6 +182,7 @@ tr.hit { animation: flash 0.9s steps(6); }
   .actions button { padding: 10px; font-size: 8px; }
   .credit { display: none; }
   td.b, th.b { display: none; }
+  .pin { min-width: 40px; min-height: 40px; }
   .you-main { grid-template-columns: auto auto minmax(0, 1fr) auto; }
   .you-main .seg { display: none; }
   .hud { grid-template-columns: 1fr 1fr; }

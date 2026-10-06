@@ -11,7 +11,7 @@ import { useLeaderboard } from "./hooks/useLeaderboard";
 import { usePlayer } from "./hooks/usePlayer";
 import { findMe } from "./lib/board";
 import { KEYS, readStored, writeStored } from "./lib/storage";
-import type { Config } from "./lib/types";
+import type { Config, KeyedEntry } from "./lib/types";
 
 const MOCK = import.meta.env.DEV && new URLSearchParams(window.location.search).has("mock");
 
@@ -24,20 +24,21 @@ function Scoreboard({ config }: { config: Config }) {
   const [meName, setMeName] = useState(() => readStored(KEYS.me) ?? "");
   const [hidden, setHidden] = useState(false);
 
-  useEffect(() => {
-    const exact = findMe(board.entries, query);
-    if (exact && exact.name !== meName) {
-      setMeName(exact.name);
-      writeStored(KEYS.me, exact.name);
-    }
-  }, [board.entries, query, meName]);
-
   const me = useMemo(() => findMe(board.entries, meName), [board.entries, meName]);
 
   const forgetMe = useCallback(() => {
     setMeName("");
     writeStored(KEYS.me, "");
   }, []);
+
+  const togglePin = useCallback(
+    (entry: KeyedEntry) => {
+      const next = me?.key === entry.key ? "" : entry.name;
+      setMeName(next);
+      writeStored(KEYS.me, next);
+    },
+    [me],
+  );
 
   const toggleHidden = useCallback(() => setHidden((value) => !value), []);
 
@@ -86,6 +87,7 @@ function Scoreboard({ config }: { config: Config }) {
           onQuery={setQuery}
           me={me}
           onForgetMe={forgetMe}
+          onTogglePin={togglePin}
           pageSize={config.pageSize}
           scoreLabel={practicum.scoreLabel}
         />
