@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
-import { clampIndex, nextIndex, previousIndex } from "../lib/playlist";
+import { clampIndex, nextIndex, previousIndex, randomIndex } from "../lib/playlist";
 import { KEYS, readNumber, readStored, writeStored } from "../lib/storage";
 import type { Track } from "../lib/types";
 
@@ -11,6 +11,10 @@ export interface PlayerState {
   count: number;
   playing: boolean;
   failed: boolean;
+  /** Position and length of the loaded track in seconds; duration is NaN until the track's metadata loads. */
+  time: number;
+  duration: number;
+  seek: (seconds: number) => void;
   volume: number;
   shuffle: boolean;
   toggle: () => void;
@@ -24,12 +28,15 @@ const SKIP_DELAY_MS = 900;
 
 /**
  * Playlist over one <audio> element. Nothing is requested until the first play,
- * a track that fails to load is skipped, and a fully broken playlist stops.
+ * the starting track is random on every page load, a track that fails to load
+ * is skipped, and a fully broken playlist stops.
  */
 export function usePlayer(tracks: readonly Track[], title: string): PlayerState {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const count = tracks.length;
-  const [index, setIndex] = useState(() => clampIndex(readNumber(KEYS.track, 0), count));
+  const [index, setIndex] = useState(() => randomIndex(count));
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(Number.NaN);
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
   const [volume, setVolumeState] = useState(() => Math.min(1, Math.max(0, readNumber(KEYS.volume, 0.6))));
@@ -68,9 +75,20 @@ export function usePlayer(tracks: readonly Track[], title: string): PlayerState 
     (target: number) => {
       live.current.index = target;
       setIndex(target);
-      writeStored(KEYS.track, String(target));
-      if (live.current.want) start(target);
-      else setFailed(false);
+      setTime(0);
+      setDuration(Number.NaN);
+      if (live.current.want) {
+        start(target);
+      } else {
+        // Unload the previous track so the slider never shows its position under the new title.
+        setFailed(false);
+        const audio = audioRef.current;
+        if (audio && live.current.loaded !== null) {
+          live.current.loaded = null;
+          audio.removeAttribute("src");
+          audio.load();
+        }
+      }
     },
     [start],
   );
@@ -116,6 +134,28 @@ export function usePlayer(tracks: readonly Track[], title: string): PlayerState 
       audio.removeEventListener("error", onError);
     };
   }, [next]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+    const onTime = () => setTime(audio.currentTime);
+    const onMeta = () => setDuration(audio.duration);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("durationchange", onMeta);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("durationchange", onMeta);
+    };
+  }, []);
+
+  const seek = useCallback((seconds: number) => {
+    const audio = audioRef.current;
+    if (!audio || live.current.loaded === null || !Number.isFinite(audio.duration)) return;
+    audio.currentTime = Math.min(Math.max(0, seconds), audio.duration);
+    setTime(audio.currentTime);
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -166,6 +206,9 @@ export function usePlayer(tracks: readonly Track[], title: string): PlayerState 
     count,
     playing,
     failed,
+    time,
+    duration,
+    seek,
     volume,
     shuffle,
     toggle,

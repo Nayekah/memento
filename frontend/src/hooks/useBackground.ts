@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { clampIndex, nextIndex } from "../lib/playlist";
-import { KEYS, readNumber, writeStored } from "../lib/storage";
+import { clampIndex, nextIndex, randomIndex } from "../lib/playlist";
 import type { Background } from "../lib/types";
 
 export interface Layer {
@@ -17,10 +16,10 @@ export interface BackgroundState {
 
 const BLANK: Layer = { src: "", pos: "50% 50%" };
 
-/** Two stacked layers so a new image fades in over the old one. */
+/** Two stacked layers so a new image fades in over the old one. A random image is picked on every page load. */
 export function useBackground(backgrounds: readonly Background[]): BackgroundState {
   const count = backgrounds.length;
-  const [index, setIndex] = useState(() => clampIndex(readNumber(KEYS.background, 0), count));
+  const [index, setIndex] = useState(() => randomIndex(count));
   const [layers, setLayers] = useState<[Layer, Layer]>([BLANK, BLANK]);
   const [active, setActive] = useState<0 | 1>(0);
   const activeRef = useRef<0 | 1>(0);
@@ -55,10 +54,6 @@ export function useBackground(backgrounds: readonly Background[]): BackgroundSta
     setLayers((existing) => (next === 0 ? [layer, existing[1]] : [existing[0], layer]));
     setActive(next);
   }, [index, backgrounds, count]);
-
-  useEffect(() => {
-    writeStored(KEYS.background, String(index));
-  }, [index]);
 
   const lucky = useCallback(() => {
     if (count < 2) return;

@@ -35,3 +35,10 @@ export function countdown(deadline: string | null, now: number): Countdown {
 export function formatClock(value: Countdown): string {
   return `${pad2(value.hours)}:${pad2(value.minutes)}:${pad2(value.seconds)}`;
 }
+
+/** Formats a track position as m:ss; unknown or invalid values show as --:--. */
+export function formatTrackTime(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
+  const whole = Math.floor(seconds);
+  return `${Math.floor(whole / 60)}:${pad2(whole % 60)}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampIndex, nextIndex, previousIndex } from "./playlist";
+import { clampIndex, nextIndex, previousIndex, randomIndex } from "./playlist";
 
 describe("playlist", () => {
   it("wraps in order", () => {
@@ -34,5 +34,17 @@ describe("playlist", () => {
     expect(clampIndex(-1, 3)).toBe(0);
     expect(clampIndex(Number.NaN, 3)).toBe(0);
     expect(clampIndex(1, 0)).toBe(0);
+  });
+  it("picks a random index within bounds, including both ends", () => {
+    expect(randomIndex(8, () => 0)).toBe(0);
+    expect(randomIndex(8, () => 0.999999)).toBe(7);
+    expect(randomIndex(8, () => 0.5)).toBe(4);
+    expect(randomIndex(0, () => 0.5)).toBe(0);
+    expect(randomIndex(1, () => 0.9)).toBe(0);
+  });
+  it("can reach every index", () => {
+    const seen = new Set<number>();
+    for (let i = 0; i < 18; i++) seen.add(randomIndex(18, () => i / 18));
+    expect(seen.size).toBe(18);
   });
 });

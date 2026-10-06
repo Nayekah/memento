@@ -22,8 +22,6 @@ export function readNumber(key: string, fallback: number): number {
 
 export const KEYS = {
   me: "memento.me",
-  background: "memento.bg",
-  track: "memento.track",
   volume: "memento.vol",
   shuffle: "memento.shuffle",
   playerMini: "memento.playerMini",

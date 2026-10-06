@@ -17,3 +17,8 @@ export function previousIndex(current: number, length: number, shuffle: boolean,
   if (length <= 1) return 0;
   return shuffle ? nextIndex(current, length, true, random) : (current - 1 + length) % length;
 }
+
+/** A uniformly random index, used to pick the background and starting track on each page load. */
+export function randomIndex(length: number, random: () => number = Math.random): number {
+  return length <= 0 ? 0 : Math.min(length - 1, Math.floor(random() * length));
+}

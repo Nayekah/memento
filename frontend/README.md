@@ -51,7 +51,7 @@ missing file shows the default title with no deadline, backgrounds, or music.
 | `refreshSeconds` | Leaderboard polling interval, 5 to 300 (default 15). |
 | `practicums` | Known practicums, each with `id`, `endpoint`, and optional `name` and `scoreLabel`. Only the one selected by `practicum` is shown. |
 | `backgrounds` | `src`, `pos` (CSS background position), and `credit`. |
-| `music` | `title`, `artist`, and `src`. |
+| `music` | `title`, `artist`, and `src`. Tracks play in this order. |
 
 Media paths are relative to the config directory, such as
 `backgrounds/zeta.webp`, or absolute paths on the same origin. URLs on other
@@ -89,10 +89,13 @@ Background art and music are usually copyrighted. Credit the artist in
   the strip jumps to your row.
 - Rank changes since the previous poll show as `+n` or `-n`, and changed scores
   flash.
+- Every page load picks a random background and a random starting track; the
+  playlist then continues in config order.
 - Music is off until someone presses play, and no audio is downloaded before
-  that. A track that fails to load is skipped.
-- Preferences such as the background, track, volume, and remembered name are
-  stored in the browser only.
+  that. A time slider shows elapsed and total time and seeks within the track
+  once it has loaded. A track that fails to load is skipped.
+- Volume, shuffle, the collapsed player, and the remembered name are stored in
+  the browser only.
 
 | Key | Action |
 | --- | --- |

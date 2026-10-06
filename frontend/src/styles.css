@@ -42,7 +42,7 @@ button, input { font: inherit; }
 .cab {
   position: relative; z-index: 3;
   width: min(1120px, calc(100vw - 24px));
-  margin: 20px auto 170px;
+  margin: 20px auto 200px;
   padding: 24px clamp(14px, 3vw, 34px) 18px;
   background: rgba(5, 5, 15, var(--glass));
   backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
@@ -154,6 +154,13 @@ tr.hit { animation: flash 0.9s steps(6); }
 .ctl .main { padding: 7px 14px; }
 .ctl { min-width: 0; }
 .vol { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; color: var(--muted); }
+.seek { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font: 19px / 1 var(--vt); color: var(--muted); }
+.seek .t { min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
+.seek input { flex: 1; min-width: 0; margin: 0; height: 14px; appearance: none; -webkit-appearance: none; background: linear-gradient(90deg, var(--pink) 0 var(--fill), #14143a var(--fill) 100%); border: 2px solid var(--line); cursor: pointer; }
+.seek input:disabled { cursor: default; opacity: 0.5; }
+.seek input:focus-visible { border-color: var(--cyan); outline: none; }
+.seek input::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 18px; background: var(--gold); border: 2px solid var(--ink); }
+.seek input::-moz-range-thumb { width: 10px; height: 18px; background: var(--gold); border: 2px solid var(--ink); border-radius: 0; }
 .vol input { width: 78px; min-width: 36px; max-width: 100%; flex: 0 1 78px; margin: 0; accent-color: var(--cyan); }
 
 /* actions, bottom-right */
@@ -164,9 +171,9 @@ tr.hit { animation: flash 0.9s steps(6); }
 .credit { margin: 0; font: 18px var(--vt); color: #fff; text-shadow: 0 1px 3px #000; }
 
 @media (max-width: 760px) {
-  .cab { margin-bottom: 260px; }
+  .cab { margin-bottom: 300px; }
   .player { left: 8px; right: 8px; bottom: 8px; width: auto; }
-  .actions { right: 8px; bottom: 130px; }
+  .actions { right: 8px; bottom: 166px; }
   .actions button { padding: 10px; font-size: 8px; }
   .credit { display: none; }
   td.b, th.b { display: none; }

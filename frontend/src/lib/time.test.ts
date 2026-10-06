@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countdown, formatClock } from "./time";
+import { countdown, formatClock, formatTrackTime } from "./time";
 
 const NOW = Date.parse("2026-10-16T00:00:00Z");
 const at = (seconds: number) => new Date(NOW + seconds * 1000).toISOString();
@@ -28,5 +28,22 @@ describe("countdown", () => {
   });
   it("never goes negative after the deadline", () => {
     expect(countdown(at(-500), NOW)).toMatchObject({ totalSeconds: 0, hours: 0, minutes: 0, seconds: 0 });
+  });
+});
+
+describe("formatTrackTime", () => {
+  it.each([
+    [0, "0:00"],
+    [9.9, "0:09"],
+    [61.9, "1:01"],
+    [137.37, "2:17"],
+    [3725, "62:05"],
+  ])("%f seconds is %s", (seconds, text) => {
+    expect(formatTrackTime(seconds)).toBe(text);
+  });
+  it("shows --:-- for unknown or invalid values", () => {
+    expect(formatTrackTime(Number.NaN)).toBe("--:--");
+    expect(formatTrackTime(Number.POSITIVE_INFINITY)).toBe("--:--");
+    expect(formatTrackTime(-1)).toBe("--:--");
   });
 });
