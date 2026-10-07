@@ -2,18 +2,20 @@
 set -euo pipefail
 
 usage() {
-    echo 'Usage: build-iso.sh --source-iso PATH --backend-url URL [--output PATH]'
+    echo 'Usage: build-iso.sh --source-iso PATH --backend-url URL [--output PATH] [--source-sha256 HEX]'
 }
 
 source_iso=""
 backend_url=""
 output=""
+source_sha256=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --source-iso) source_iso=${2:?missing ISO path}; shift 2 ;;
         --backend-url) backend_url=${2:?missing backend URL}; shift 2 ;;
         --output) output=${2:?missing output path}; shift 2 ;;
+        --source-sha256) source_sha256=${2:?missing SHA-256}; shift 2 ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
     esac
@@ -22,10 +24,29 @@ done
 [ -n "$source_iso" ] || { echo '--source-iso is required.' >&2; exit 2; }
 [ -f "$source_iso" ] || { echo "ISO not found: $source_iso" >&2; exit 2; }
 [ -n "$backend_url" ] || { echo '--backend-url is required.' >&2; exit 2; }
+if [ -n "$source_sha256" ]; then
+    printf '%s' "$source_sha256" | grep -Eq '^[0-9A-Fa-f]{64}$' || { echo '--source-sha256 must be 64 hexadecimal characters.' >&2; exit 2; }
+fi
 
-for command in 7z cpio gzip mkisofs; do
+for command in 7z cpio gzip mkisofs sha256sum; do
     command -v "$command" >/dev/null || { echo "$command was not found in PATH." >&2; exit 127; }
 done
+
+# Check the base image before anything is extracted or built from it.
+source_hash=$(sha256sum "$source_iso" | cut -d' ' -f1)
+echo "Source ISO SHA-256: $source_hash"
+if [ -n "$source_sha256" ]; then
+    expected=$(printf '%s' "$source_sha256" | tr 'A-F' 'a-f')
+    if [ "$source_hash" != "$expected" ]; then
+        {
+            echo 'The source ISO does not match --source-sha256.'
+            echo "  expected: $expected"
+            echo "  actual:   $source_hash"
+        } >&2
+        exit 1
+    fi
+    echo 'Source ISO checksum verified.'
+fi
 
 ca_bundle=${SSL_CERT_FILE:-}
 if [ -z "$ca_bundle" ]; then
