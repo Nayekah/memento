@@ -10,7 +10,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const (
+	uniqueViolation          = "23505"
+	deviceIDUniqueConstraint = "vm_activations_device_id_key"
 )
 
 func tokenFor(secret, student string) string {
@@ -51,6 +57,13 @@ func activateVM(ctx context.Context, db *pgxpool.Pool, student, deviceID string)
 		ON CONFLICT (student_id) DO UPDATE SET last_seen_at = now()
 		WHERE vm_activations.device_id = EXCLUDED.device_id`, student, deviceID)
 	if err != nil {
+		// The ON CONFLICT clause covers a student who is already bound. A device
+		// that belongs to a different student violates the unique index on
+		// device_id instead.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation && pgErr.ConstraintName == deviceIDUniqueConstraint {
+			return errDeviceInUse
+		}
 		return err
 	}
 	if result.RowsAffected() == 0 {

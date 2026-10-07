@@ -47,7 +47,7 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 		}
 		if err := activateVM(r.Context(), db, student, request.DeviceID); err != nil {
 			switch {
-			case errors.Is(err, errActivationBound):
+			case errors.Is(err, errActivationBound), errors.Is(err, errDeviceInUse):
 				writeError(w, http.StatusConflict, err.Error())
 			case errors.Is(err, errStudentNotRegistered):
 				writeError(w, http.StatusForbidden, err.Error())

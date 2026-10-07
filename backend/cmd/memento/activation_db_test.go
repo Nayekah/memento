@@ -32,3 +32,26 @@ func TestActivateVMBindsOneDevicePerStudent(t *testing.T) {
 		t.Errorf("activating a new device after a reset: %v", err)
 	}
 }
+
+func TestActivateVMRefusesADeviceBoundToAnotherStudent(t *testing.T) {
+	db := testDatabase(t)
+	ctx := context.Background()
+	addStudents(t, db, "alice", "bob")
+	device := strings.Repeat("a", 32)
+
+	if err := activateVM(ctx, db, "alice", device); err != nil {
+		t.Fatalf("alice's activation: %v", err)
+	}
+	if err := activateVM(ctx, db, "bob", device); !errors.Is(err, errDeviceInUse) {
+		t.Fatalf("bob presenting alice's device: error = %v, want errDeviceInUse", err)
+	}
+	if err := activateVM(ctx, db, "alice", device); err != nil {
+		t.Errorf("alice activating her own device again: %v", err)
+	}
+	if err := runResetActivationCommand(ctx, db, []string{"alice"}); err != nil {
+		t.Fatalf("reset activation: %v", err)
+	}
+	if err := activateVM(ctx, db, "bob", device); err != nil {
+		t.Errorf("bob after alice's activation was reset: %v", err)
+	}
+}
