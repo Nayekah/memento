@@ -31,6 +31,7 @@ fi
 (
     cd backend
     "$go_binary" vet ./cmd/memento ./db
+    "$go_binary" test ./cmd/memento ./db
 )
 
 if command -v shellcheck >/dev/null 2>&1; then
