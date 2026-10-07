@@ -112,6 +112,7 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 		writeJSON(w, http.StatusOK, value)
 	})
 	mux.HandleFunc("GET /api/v1/leaderboard", func(w http.ResponseWriter, r *http.Request) { serveLeaderboard(w, r, db) })
+	mux.HandleFunc("GET /api/v1/practicums/{practicum}/leaderboard", practicumLeaderboardHandler(db))
 	return http.ListenAndServe(":8067", securityHeaders(mux))
 }
 
@@ -138,7 +139,11 @@ func submissionForRequest(w http.ResponseWriter, r *http.Request, cfg config, db
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request, db *pgxpool.Pool) {
-	rows, err := db.Query(r.Context(), `WITH best AS (SELECT DISTINCT ON (s.student_id) s.student_id, s.score, s.max_score, s.completed_at FROM submissions s WHERE s.status = 'completed' AND s.score IS NOT NULL ORDER BY s.student_id, s.score DESC, s.completed_at ASC) SELECT RANK() OVER (ORDER BY b.score DESC, b.completed_at ASC), st.display_name, b.score, b.max_score FROM best b JOIN students st ON st.id = b.student_id ORDER BY 1, st.display_name`)
+	serveLeaderboardFor(w, r, db, defaultPracticum)
+}
+
+func serveLeaderboardFor(w http.ResponseWriter, r *http.Request, db *pgxpool.Pool, practicum string) {
+	rows, err := db.Query(r.Context(), `WITH best AS (SELECT DISTINCT ON (s.student_id) s.student_id, s.score, s.max_score, s.completed_at FROM submissions s WHERE s.status = 'completed' AND s.score IS NOT NULL AND s.practicum = $1 ORDER BY s.student_id, s.score DESC, s.completed_at ASC) SELECT RANK() OVER (ORDER BY b.score DESC, b.completed_at ASC), st.display_name, b.score, b.max_score FROM best b JOIN students st ON st.id = b.student_id ORDER BY 1, st.display_name`, practicum)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not read leaderboard")
 		return
