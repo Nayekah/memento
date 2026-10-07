@@ -141,3 +141,38 @@ from the proxy; `log` mode shows that before `enforce` locks anyone out.
 of the API. Students connect from different loopback addresses, and forged
 `X-Forwarded-For` headers must not change the outcome. It needs the PostgreSQL
 server binaries, `caddy`, `curl`, and Go.
+
+## Student tokens
+
+A token is derived from `TOKEN_SECRET` and the student ID, so it does not change
+by itself. Each student also has a token version, which starts at 0, and a
+disabled flag. Version 0 is the original derivation, so tokens that have
+already been issued keep working until their student is rotated.
+
+```bash
+docker compose run --rm -T api token 18225001         # print the current token
+docker compose run --rm -T api rotate-token 18225001  # invalidate it and print a new one
+docker compose run --rm api disable 18225001          # refuse every request from this student
+docker compose run --rm api enable 18225001           # undo that
+```
+
+`rotate-token` changes one student's token and nobody else's. The old token is
+refused with `invalid submission token` from the next request, so the student
+has to be given the new one. To rebuild a cohort profile around it, write the
+token to a file and pass that file to `wireguard/replace-peer.sh --token-file`.
+
+A disabled student's requests are refused with `this student account is
+disabled`, but only when the token is valid, so a wrong token does not reveal
+whether an account is disabled. Submissions and scores are kept. Disabling does
+not touch the VPN; revoke the peer separately.
+
+For a lost laptop, revoke the peer with `wireguard/revoke-peer.sh`, rotate the
+token, and replace the peer with the new token file. Use `disable` instead to
+lock a student out until you decide otherwise.
+
+The API reads the student's token version on every authenticated request, so a
+rotation or a disable takes effect at once and needs no restart.
+
+`bash scripts/token-state-test.sh` checks the commands and the API's behaviour
+against a temporary PostgreSQL cluster. It needs the PostgreSQL server binaries,
+`curl`, and Go.
