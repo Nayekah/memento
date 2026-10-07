@@ -39,7 +39,8 @@ if command -v shellcheck >/dev/null 2>&1; then
         sandbox/scripts/build-iso.sh sandbox/vm/overlay/sbin/autologin \
         sandbox/vm/overlay/sbin/memento-login \
         sandbox/vm/overlay/usr/local/bin/submit \
-        sandbox/vm/overlay/usr/local/bin/status
+        sandbox/vm/overlay/usr/local/bin/status \
+        sandbox/vm/overlay/usr/local/bin/nickname
 else
     echo 'ShellCheck is not installed; shell linting was skipped.'
 fi
