@@ -18,3 +18,6 @@ var PeersMigration string
 
 //go:embed migrations/tokens.sql
 var TokensMigration string
+
+//go:embed migrations/display_names.sql
+var DisplayNamesMigration string

@@ -20,6 +20,7 @@ var migrations = []migration{
 	{version: "003_queue_hardening", sql: database.QueueMigration},
 	{version: "004_student_peers", sql: database.PeersMigration},
 	{version: "005_student_token_state", sql: database.TokensMigration},
+	{version: "006_unique_display_names", sql: database.DisplayNamesMigration},
 }
 
 func openDatabase(ctx context.Context, cfg config) (*pgxpool.Pool, error) {
@@ -47,6 +48,12 @@ func openDatabase(ctx context.Context, cfg config) (*pgxpool.Pool, error) {
 }
 
 func migrate(ctx context.Context, db *pgxpool.Pool) error {
+	return applyMigrations(ctx, db, migrations)
+}
+
+// applyMigrations applies the listed migrations that have not been applied yet,
+// in one transaction.
+func applyMigrations(ctx context.Context, db *pgxpool.Pool, pending []migration) error {
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return err
@@ -58,7 +65,7 @@ func migrate(ctx context.Context, db *pgxpool.Pool) error {
 	if _, err := tx.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`); err != nil {
 		return err
 	}
-	for _, migration := range migrations {
+	for _, migration := range pending {
 		var applied bool
 		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = $1)`, migration.version).Scan(&applied); err != nil {
 			return err
