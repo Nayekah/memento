@@ -54,6 +54,9 @@ func loadConfig(requireSecret bool) (config, error) {
 	if requireSecret && len(cfg.secret) < 24 {
 		return config{}, errors.New("TOKEN_SECRET must contain at least 24 characters")
 	}
+	if requireSecret && isPublishedSecret(cfg.secret) {
+		return config{}, errors.New("TOKEN_SECRET is a value that was published in this repository; generate a new one with: openssl rand -base64 32")
+	}
 	return cfg, nil
 }
 
