@@ -41,6 +41,10 @@ func main() {
 		err = runResetActivationCommand(context.Background(), db, os.Args[2:])
 	case "regrade":
 		err = runRegradeCommand(context.Background(), db, os.Args[2:])
+	case "peer":
+		err = runPeerCommand(context.Background(), db, os.Args[2:])
+	case "peers":
+		err = runPeersCommand(context.Background(), db, os.Args[2:], os.Stdin)
 	default:
 		log.Fatal(usage)
 	}
