@@ -35,7 +35,13 @@ cd ~/memento
 nano bits.c
 submit
 status SUBMISSION_ID
+nickname Your Name
 ```
+
+`nickname` changes the name shown on the scoreboard: up to 20 characters of
+letters, numbers, spaces, dots, underscores, and hyphens, starting with a letter
+or number. Names are unique regardless of case and cannot be another student's
+ID.
 
 `submit` always uploads `~/memento/bits.c`; it cannot select another file. It prints a submission ID while the job is queued. `status` uses that ID to display the grading verdict and score. The backend accepts only a file named `bits.c` and grades it in an isolated container.
 
