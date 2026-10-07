@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"regexp"
 	"strconv"
@@ -32,6 +34,9 @@ type config struct {
 	secret                  string
 	workerID                string
 	submissionRatePerMinute int
+	peerBinding             peerBindingMode
+	trustedProxies          []netip.Prefix
+	peerLookup              func(ctx context.Context, student string) (netip.Addr, bool, error)
 }
 
 func loadConfig(requireSecret bool) (config, error) {
@@ -48,6 +53,16 @@ func loadConfig(requireSecret bool) (config, error) {
 		return config{}, err
 	}
 	cfg.submissionRatePerMinute = rate
+	binding, err := parsePeerBindingMode(os.Getenv("PEER_BINDING"))
+	if err != nil {
+		return config{}, err
+	}
+	cfg.peerBinding = binding
+	proxies, err := parseTrustedProxies(os.Getenv("TRUSTED_PROXY"))
+	if err != nil {
+		return config{}, err
+	}
+	cfg.trustedProxies = proxies
 	if cfg.databaseURL == "" {
 		return config{}, errors.New("DATABASE_URL is required")
 	}
