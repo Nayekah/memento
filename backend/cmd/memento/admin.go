@@ -17,7 +17,7 @@ func runStudentCommand(ctx context.Context, db *pgxpool.Pool, args []string) err
 		name = strings.Join(args[1:], " ")
 	}
 	_, err := db.Exec(ctx, `INSERT INTO students (id, display_name) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name`, args[0], name)
-	return err
+	return mapDisplayNameConflict(err)
 }
 
 func runResetActivationCommand(ctx context.Context, db *pgxpool.Pool, args []string) error {
