@@ -15,3 +15,6 @@ var QueueMigration string
 
 //go:embed migrations/peers.sql
 var PeersMigration string
+
+//go:embed migrations/tokens.sql
+var TokensMigration string

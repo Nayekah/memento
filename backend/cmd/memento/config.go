@@ -14,7 +14,7 @@ import (
 
 const (
 	maxSourceBytes = 128 * 1024
-	usage          = "usage: memento [api|worker|token STUDENT_ID|student STUDENT_ID [DISPLAY_NAME]|reset-activation STUDENT_ID|regrade SUBMISSION_ID|peer STUDENT_ID [IP|--clear]|peers import]"
+	usage          = "usage: memento [api|worker|token STUDENT_ID|student STUDENT_ID [DISPLAY_NAME]|reset-activation STUDENT_ID|regrade SUBMISSION_ID|peer STUDENT_ID [IP|--clear]|peers import|rotate-token STUDENT_ID|disable STUDENT_ID|enable STUDENT_ID]"
 )
 
 var (
@@ -37,6 +37,7 @@ type config struct {
 	peerBinding             peerBindingMode
 	trustedProxies          []netip.Prefix
 	peerLookup              func(ctx context.Context, student string) (netip.Addr, bool, error)
+	studentState            func(ctx context.Context, student string) (tokenState, error)
 }
 
 func loadConfig(requireSecret bool) (config, error) {
