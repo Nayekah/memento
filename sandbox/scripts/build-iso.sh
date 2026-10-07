@@ -80,4 +80,7 @@ escaped_backend=$(printf '%s' "$backend_url" | sed 's/[&|]/\\&/g')
 find "$work/overlay" -type f -exec sed -i "s|__BACKEND_URL__|$escaped_backend|g" {} +
 (cd "$work/overlay" && find . -print | cpio -o -H newc 2>/dev/null | gzip -9) >"$work/iso/boot/sisterd.gz"
 mkisofs -l -r -J -V MEMENTO_LAB -b boot/isolinux/isolinux.bin -c boot/isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -o "$output" "$work/iso" >/dev/null
+output_hash=$(sha256sum "$output" | cut -d' ' -f1)
+printf '%s  %s\n' "$output_hash" "$(basename "$output")" >"$output.sha256"
 printf 'ISO created: %s\n' "$output"
+printf 'SHA-256: %s (written to %s)\n' "$output_hash" "$output.sha256"
