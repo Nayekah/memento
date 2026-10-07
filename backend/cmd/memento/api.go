@@ -58,6 +58,38 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 		}
 		writeJSON(w, http.StatusCreated, map[string]string{"status": "activated", "student_id": student})
 	})
+	mux.HandleFunc("PUT /api/v1/me/display-name", func(w http.ResponseWriter, r *http.Request) {
+		student, err := authenticate(r, cfg)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+		var request struct {
+			DisplayName string `json:"display_name"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1024)
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid display name request")
+			return
+		}
+		name, err := normalizeDisplayName(request.DisplayName)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := setDisplayName(r.Context(), db, student, name); err != nil {
+			switch {
+			case errors.Is(err, errDisplayNameTaken):
+				writeError(w, http.StatusConflict, err.Error())
+			case errors.Is(err, errStudentNotRegistered):
+				writeError(w, http.StatusForbidden, err.Error())
+			default:
+				writeError(w, http.StatusInternalServerError, "could not change display name")
+			}
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"display_name": name})
+	})
 	mux.HandleFunc("POST /api/v1/submissions", func(w http.ResponseWriter, r *http.Request) {
 		student, err := authenticate(r, cfg)
 		if err != nil {
