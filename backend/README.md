@@ -93,3 +93,51 @@ any existing database:
 MEMENTO_TEST_DATABASE_URL='postgresql://user:password@127.0.0.1:5432/postgres?sslmode=disable' \
   go test -race ./cmd/memento
 ```
+
+## Peer binding
+
+A student token is derived from the student ID, so on its own it works from any
+VPN peer. Peer binding ties each student to the VPN address that
+`wireguard/provision-cohort.sh` assigned and checks that address on every
+authenticated request. Register the addresses once the cohort is provisioned,
+using the manifest the script wrote:
+
+```bash
+docker compose run --rm -T api peers import < /secure/memento-cohort-2026/students.tsv
+docker compose run --rm api peer 18225001             # show one address
+docker compose run --rm api peer 18225001 10.66.0.10  # set or change it
+docker compose run --rm api peer 18225001 --clear     # remove it
+```
+
+The import reads the student ID and the address from the first two columns,
+skips a header row that starts with `nim`, and registers either every row or
+none, naming the line it refuses. Replacing a peer's keys with
+`wireguard/replace-peer.sh` keeps its address, so nothing needs to be
+registered again.
+
+`PEER_BINDING` selects what the API does when a request does not come from the
+registered address:
+
+| Value | Behaviour |
+| --- | --- |
+| `off` (default) | No check. |
+| `log` | The mismatch is logged as `peer binding: student=... client=...` and the request is allowed. |
+| `enforce` | The request is rejected with `401`. A student with no registered address is rejected too. |
+
+Roll it out in that order: rehearse with `log`, fix the registrations that the
+log shows, then switch to `enforce`. Set `PEER_BINDING` in `.env` and restart
+the API. `PEER_BINDING=off` and a restart is the way back.
+
+The API reads the client address from the connection. Behind Caddy that
+connection is the proxy, so `TRUSTED_PROXY` lists the proxy's address, as
+addresses or CIDR ranges separated by commas. The Compose default is
+`172.30.0.4`, the proxy's fixed address in the WireGuard setup. A request from a
+listed proxy is attributed to the last `X-Forwarded-For` entry, and the header
+is ignored on every other connection, so a client cannot choose its own
+address. If the proxy's address is wrong, every request looks as if it came
+from the proxy; `log` mode shows that before `enforce` locks anyone out.
+
+`bash scripts/peer-binding-test.sh` checks all of this with real Caddy in front
+of the API. Students connect from different loopback addresses, and forged
+`X-Forwarded-For` headers must not change the outcome. It needs the PostgreSQL
+server binaries, `caddy`, `curl`, and Go.
