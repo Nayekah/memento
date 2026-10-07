@@ -28,6 +28,7 @@ func main() {
 	switch mode {
 	case "api":
 		cfg.peerLookup = databasePeerLookup(db)
+		cfg.studentState = databaseStudentState(db)
 		log.Fatal(serveAPI(cfg, db))
 	case "worker":
 		log.Fatal(runWorker(cfg, db))

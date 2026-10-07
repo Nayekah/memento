@@ -29,10 +29,17 @@ func authenticate(r *http.Request, cfg config) (string, error) {
 	if !studentIDPattern.MatchString(student) {
 		return "", errors.New("invalid student identifier")
 	}
+	state, err := lookupTokenState(r.Context(), cfg, student)
+	if err != nil {
+		return "", err
+	}
 	token := normalizeToken(r.Header.Get("X-Memento-Token"))
-	expected := normalizeToken(tokenFor(cfg.secret, student))
+	expected := normalizeToken(tokenForVersion(cfg.secret, student, state.version))
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
 		return "", errors.New("invalid submission token")
+	}
+	if state.disabled {
+		return "", errStudentDisabled
 	}
 	if err := checkPeer(r, cfg, student); err != nil {
 		return "", err
