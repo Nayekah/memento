@@ -125,3 +125,55 @@ describe("Board with 130 students", () => {
     expect(bodyRows()).toBe(1);
   });
 });
+
+describe("Board progress cells", () => {
+  const board: BoardState = {
+    status: "ok",
+    entries: withKeys([
+      {
+        rank: 1,
+        name: "ayu",
+        score: 7,
+        max_score: 10,
+        challenges: [
+          { name: "bitAnd", points: 3, max: 3 },
+          { name: "negate", points: 2, max: 4 },
+          { name: "tmin", points: 0, max: 3 },
+        ],
+      },
+      { rank: 2, name: "budi", score: 5, max_score: 10 },
+    ]),
+    updatedAt: new Date(),
+    stale: false,
+    deltas: new Map(),
+  };
+  const row = (key: string) => document.querySelector(`tr[data-key="${key}"]`) as HTMLElement;
+
+  it("draws one cell per challenge, marked solved, partial, or empty", () => {
+    render(<Harness board={board} />);
+    expect([...row("ayu#0").querySelectorAll(".cells i")].map((cell) => cell.className)).toEqual(["solved", "partial", "empty"]);
+  });
+
+  it("labels the bar with the number of solved challenges", () => {
+    render(<Harness board={board} />);
+    expect(row("ayu#0").querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("1 of 3 challenges solved");
+    expect(row("ayu#0").querySelector(".chal b")?.textContent).toBe("1/3");
+  });
+
+  it("names each challenge and its points on the cell", () => {
+    render(<Harness board={board} />);
+    expect([...row("ayu#0").querySelectorAll(".cells i")].map((cell) => cell.getAttribute("title"))).toEqual(["bitAnd: 3/3", "negate: 2/4", "tmin: 0/3"]);
+  });
+
+  it("keeps the score bar for an entry without a breakdown", () => {
+    render(<Harness board={board} />);
+    expect(row("budi#0").querySelector(".cells")).toBeNull();
+    expect(row("budi#0").querySelector('.seg[role="img"]')?.getAttribute("aria-label")).toBe("5 of 10");
+  });
+
+  it("draws the pinned student's cells in the YOU strip too", () => {
+    render(<Harness board={board} initialMe="ayu" />);
+    expect(document.querySelectorAll(".you .cells i")).toHaveLength(3);
+  });
+});
+

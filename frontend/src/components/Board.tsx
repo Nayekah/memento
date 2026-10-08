@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { BoardState } from "../hooks/useLeaderboard";
-import { growLimit, page } from "../lib/board";
-import type { KeyedEntry } from "../lib/types";
+import { challengeState, countSolved, growLimit, page } from "../lib/board";
+import type { Challenge, KeyedEntry } from "../lib/types";
 import { PinIcon } from "./icons";
 
 interface BoardProps {
@@ -46,7 +46,28 @@ function Score({ value, animate }: { value: number; animate: boolean }) {
   return <>{String(shown).padStart(3, "0")}</>;
 }
 
+/** One cell per challenge: solid when solved, striped when partly earned, hollow when nothing was earned. */
+function Cells({ challenges }: { challenges: readonly Challenge[] }) {
+  const solved = countSolved(challenges);
+  return (
+    <div className="chal" role="img" aria-label={`${solved} of ${challenges.length} challenges solved`}>
+      <span className="cells" aria-hidden="true">
+        {challenges.map((challenge, i) => (
+          <i
+            key={`${i}-${challenge.name}`}
+            className={challengeState(challenge)}
+            title={`${challenge.name}: ${challenge.points}/${challenge.max}`}
+            style={{ "--n": i } as CSSProperties}
+          />
+        ))}
+      </span>
+      <b aria-hidden="true">{`${solved}/${challenges.length}`}</b>
+    </div>
+  );
+}
+
 function Bar({ entry }: { entry: KeyedEntry }) {
+  if (entry.challenges !== undefined) return <Cells challenges={entry.challenges} />;
   return (
     <div className="seg" role="img" aria-label={`${entry.score} of ${entry.max_score}`}>
       <i style={{ width: `${(entry.score / entry.max_score) * 100}%`, "--c": tier(entry) } as CSSProperties} />
