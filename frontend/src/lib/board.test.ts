@@ -1,8 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { computeDeltas, findMe, growLimit, indexByKey, page, search, withKeys } from "./board";
+import { challengeState, computeDeltas, countSolved, findMe, growLimit, indexByKey, page, search, withKeys } from "./board";
 import type { Entry } from "./types";
 
 const make = (n: number): Entry[] => Array.from({ length: n }, (_, i) => ({ rank: i + 1, name: `student_${String(i + 1).padStart(3, "0")}`, score: 100 - (i % 100), max_score: 100 }));
+
+describe("challengeState and countSolved", () => {
+  it("tells solved, partial, and empty challenges apart", () => {
+    expect(challengeState({ name: "a", points: 3, max: 3 })).toBe("solved");
+    expect(challengeState({ name: "a", points: 2, max: 4 })).toBe("partial");
+    expect(challengeState({ name: "a", points: 0, max: 4 })).toBe("empty");
+  });
+  it("counts only the challenges that are fully solved", () => {
+    const challenges = [
+      { name: "a", points: 3, max: 3 },
+      { name: "b", points: 2, max: 4 },
+      { name: "c", points: 0, max: 3 },
+      { name: "d", points: 6, max: 6 },
+    ];
+    expect(countSolved(challenges)).toBe(2);
+    expect(countSolved([])).toBe(0);
+  });
+  it("keeps the challenges when entries get keys", () => {
+    const challenges = [{ name: "a", points: 1, max: 2 }];
+    const [keyed] = withKeys([{ rank: 1, name: "Sam", score: 1, max_score: 2, challenges }]);
+    expect(keyed.challenges).toEqual(challenges);
+  });
+});
 
 describe("withKeys", () => {
   it("gives duplicate display names distinct keys", () => {

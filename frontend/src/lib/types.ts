@@ -1,8 +1,17 @@
+/** A student's result for one challenge: the points earned out of the points available. */
+export interface Challenge {
+  name: string;
+  points: number;
+  max: number;
+}
+
 export interface Entry {
   rank: number;
   name: string;
   score: number;
   max_score: number;
+  /** One result per challenge. Absent when the backend cannot break the score down. */
+  challenges?: Challenge[];
 }
 
 export interface KeyedEntry extends Entry {
