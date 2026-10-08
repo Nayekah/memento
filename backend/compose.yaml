@@ -1,6 +1,9 @@
 services:
   postgres:
     image: postgres:17-alpine
+    networks:
+      memento:
+        ipv4_address: 172.30.0.2
     environment:
       POSTGRES_DB: memento
       POSTGRES_USER: memento
@@ -20,6 +23,9 @@ services:
       target: api
     image: memento-api:local
     command: ["api"]
+    networks:
+      memento:
+        ipv4_address: 172.30.0.3
     environment:
       DATABASE_URL: postgresql://memento:${POSTGRES_PASSWORD}@postgres:5432/memento?sslmode=disable
       TOKEN_SECRET: ${TOKEN_SECRET:?required}
@@ -33,8 +39,12 @@ services:
 
   proxy:
     image: caddy:2-alpine
+    networks:
+      memento:
+        ipv4_address: 172.30.0.4
     environment:
       DOMAIN: ${DOMAIN:?required}
+      VPN_SUBNET: ${VPN_SUBNET:-10.66.0.0/24}
     depends_on:
       api:
         condition: service_started
@@ -53,6 +63,9 @@ services:
       target: worker
     image: memento-worker:local
     command: ["worker"]
+    networks:
+      memento:
+        ipv4_address: 172.30.0.5
     user: "0:0"
     environment:
       DATABASE_URL: postgresql://memento:${POSTGRES_PASSWORD}@postgres:5432/memento?sslmode=disable
@@ -80,3 +93,10 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+
+networks:
+  memento:
+    name: memento_net
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

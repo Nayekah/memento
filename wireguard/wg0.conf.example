@@ -1,0 +1,10 @@
+[Interface]
+Address = 10.66.0.1/24
+ListenPort = 51820
+PrivateKey = REPLACE_WITH_SERVER_PRIVATE_KEY
+
+# Re-load the dedicated deny-by-default policy on every interface start.
+PostUp = nft delete table inet memento_vpn 2>/dev/null || true; nft -f /etc/wireguard/memento-vpn.nft
+PostDown = nft delete table inet memento_vpn 2>/dev/null || true
+
+# Add one [Peer] block per student with provision-peer.sh.
