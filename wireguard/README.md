@@ -208,3 +208,31 @@ sudo wg show
 The latest-handshake timestamp is the minimum operational signal; for a
 high-stakes exam, also log peer handshakes and reject submissions whose peer
 has not handshaken recently.
+
+`wireguard/peer-status.sh` matches each peer in the server configuration to
+its student and shows the latest handshake:
+
+```sh
+sudo wireguard/peer-status.sh
+```
+
+```text
+STUDENT          ADDRESS          LAST HANDSHAKE   STATUS
+18225001         10.66.0.10       50s ago          OK
+18225002         10.66.0.11       5m ago           STALE
+18225003         10.66.0.12       never            NEVER
+18225004         10.66.0.13       -                MISSING
+4 peers: 1 ok, 1 stale, 1 never, 1 missing
+```
+
+A peer is `STALE` when its last handshake is older than `--stale-seconds`
+(default 180), `NEVER` when it has not completed a handshake yet, and `MISSING`
+when it is in the configuration but not on the interface. If `wg0` is down every
+peer is `UNKNOWN`. The script also warns about peers on `wg0` that are not in
+the configuration. It exits 1 when anything is wrong, so it works as a cron or
+monitoring check. `--only-problems` hides healthy peers and `--format tsv`
+prints machine-readable lines.
+
+`bash wireguard/test/status.test.sh` checks the script with a stubbed `wg`, and
+against a real `wg0` inside a private network namespace when the machine allows
+it.
