@@ -14,6 +14,9 @@ local model, or use pre-downloaded material. For a meaningful exam control,
 issue managed devices or require a client kill-switch that blocks untunneled
 traffic, and verify the WireGuard handshake during the assessment.
 
+Connection history and dropped traffic are logged so an incident can be
+reviewed afterwards. See [INCIDENT-LOGS.md](INCIDENT-LOGS.md).
+
 ## Server setup
 
 Run these commands on the Linux host that runs `backend/compose.yaml`:

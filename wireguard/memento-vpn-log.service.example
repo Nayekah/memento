@@ -1,0 +1,44 @@
+# Records WireGuard peer events to /var/log/memento-vpn-events.log.
+#
+#   sudo cp wireguard/memento-vpn-log.service.example /etc/systemd/system/memento-vpn-log.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now memento-vpn-log
+#
+# Change ExecStart to where this repository is checked out.
+
+[Unit]
+Description=Memento exam VPN event log
+After=wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+ExecStart=/opt/memento/wireguard/peer-log.sh --server-conf /etc/wireguard/wg0.conf --log-file /var/log/memento-vpn-events.log --state-dir /run/memento-vpn
+
+# A gap in the log is a gap in the record, so restart it at once if it stops.
+Restart=always
+RestartSec=2
+
+# The previous sample is kept across restarts, so a restart does not make every
+# connected student look newly found. It is cleared at reboot, with the
+# interface counters it is compared with.
+RuntimeDirectory=memento-vpn
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+
+# It reads WireGuard state and appends to one file.
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/log
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+
+[Install]
+WantedBy=multi-user.target
