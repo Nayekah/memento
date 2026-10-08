@@ -81,3 +81,15 @@ bash scripts/smoke-test.sh
 
 The smoke test creates temporary services, submits `bits.c`, verifies grading
 and leaderboard output, then removes its temporary resources.
+
+The Go tests run with `go test ./cmd/memento`. The ones that need PostgreSQL
+(migrations, submission ownership, the rate limit, queue claiming, VM
+activation, and the leaderboard) skip themselves unless
+`MEMENTO_TEST_DATABASE_URL` points at a server where that user may create
+databases. Each test creates and drops its own database, so the URL can name
+any existing database:
+
+```bash
+MEMENTO_TEST_DATABASE_URL='postgresql://user:password@127.0.0.1:5432/postgres?sslmode=disable' \
+  go test -race ./cmd/memento
+```
