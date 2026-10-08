@@ -66,7 +66,8 @@ A practicum whose endpoint returns 404 or 501 shows "THIS PRACTICUM HAS NO
 SCOREBOARD YET". The backend currently serves only `GET /api/v1/leaderboard`
 for Data Lab, so `bomblab` stays in that state until a Bomb Lab endpoint
 returns the same `{"entries": [{"rank", "name", "score", "max_score"}]}`
-shape.
+shape. An entry can also carry `"challenges": [{"name", "points", "max"}]`, one
+item per challenge, which the progress column draws (see Behaviour).
 
 ### Preparing media
 
@@ -85,6 +86,15 @@ Background art and music are usually copyrighted. Credit the artist in
 - The countdown turns amber below ten minutes, flashes red below one minute,
   and shows TIME UP at the deadline. Scores stay visible.
 - Searching covers every student, not only the visible rows.
+- The progress column shows one cell per challenge when an entry has
+  `challenges`. A solid green cell is a solved challenge (every point earned), a
+  striped gold cell is partly earned, and a hollow cell has no points. The count
+  beside the cells is the number of solved challenges, and hovering a cell shows
+  the challenge name and its points. An entry without `challenges`, or with a
+  malformed list, shows a bar sized by the score ratio instead. The column is
+  hidden on narrow screens, as the bar was.
+
+  ![Scoreboard with a pinned row and per-challenge cells](docs/screenshots/05-challenge-cells.jpg)
 - The pin button at the end of each row marks that student as "you": the HUD
   and a pinned strip show your rank, and the strip jumps to your row. Click the
   pin again, or the X on the strip, to unpin.
