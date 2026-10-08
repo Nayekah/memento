@@ -143,6 +143,47 @@ access, WireGuard interface, or Docker daemon:
 bash wireguard/test/provision.test.sh
 ```
 
+## Revoke or replace a student's access
+
+If a student loses a device or a profile leaks, cut that student's access
+without touching anyone else:
+
+```sh
+sudo wireguard/revoke-peer.sh --student 18225002 --reason "lost laptop"
+```
+
+The script removes the peer from the running `wg0` interface first, so access
+ends at once. It then deletes the student's block from
+`/etc/wireguard/wg0.conf` and appends a line to
+`/var/log/memento-vpn-revocations.log` (override with `--log`) holding the time,
+the student, the VPN address, a short key fingerprint, the operator, and the
+reason. `--dry-run` shows what would change and changes nothing. If `wg0` is
+down, only the configuration is edited and the script says so.
+
+To give the student a new profile on the same VPN address, replace the keys
+instead:
+
+```sh
+sudo wireguard/replace-peer.sh \
+  --student 18225002 \
+  --endpoint PUBLIC_IP_SERVER:51820 \
+  --output /secure/memento-cohort-2026/18225002.conf \
+  --token-file /secure/memento-cohort-2026/18225002.token
+```
+
+It checks its arguments before it revokes anything, so a bad token file or
+output path never leaves a student without a peer. Delete the old copy of the
+profile, and any other copy that left the secure directory.
+
+Revoking removes network access only. The proxy answers only VPN addresses, so a
+revoked peer cannot reach the API, but the student's token itself stays valid.
+Tokens derive from the shared `TOKEN_SECRET`, so one token cannot be rotated
+without changing every token.
+
+`bash wireguard/test/peers.test.sh` checks both scripts. It runs once with a
+stubbed `wg`, and again against a real `wg0` interface inside a private network
+namespace when the machine allows it.
+
 ## Verification
 
 From a connected student client:
