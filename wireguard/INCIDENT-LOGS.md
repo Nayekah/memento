@@ -138,3 +138,11 @@ files, so shorten or lengthen `rotate` to match.
 - A drop shorter than the timings above.
 - Use of a phone hotspot or a second network, which never touches the tunnel.
 - The logs are only as complete as the logger's uptime. A gap between summary lines is a gap in the record.
+
+## Proxy access log
+
+Caddy writes an access log with the client's VPN address, the student ID header,
+the method, the path, and the status of every request, which shows when a
+student submitted or checked a result. The `X-Memento-Token` header is removed
+from every line, because the token is the student's credential. Read it with
+`docker compose logs proxy` from `backend/`.

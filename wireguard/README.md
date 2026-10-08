@@ -73,7 +73,9 @@ source address:
 - `POST /api/v1/submissions`
 - `GET /api/v1/submissions/{id}`
 - `GET /api/v1/submissions/{id}/report`
+- `PUT /api/v1/me/display-name`
 - `GET /api/v1/leaderboard`
+- `GET /api/v1/practicums/{practicum}/leaderboard`
 
 The system status, health check, PostgreSQL, and the grader are not part of the
 student network. The leaderboard remains VPN-only but is intentionally
