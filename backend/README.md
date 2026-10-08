@@ -176,3 +176,16 @@ rotation or a disable takes effect at once and needs no restart.
 `bash scripts/token-state-test.sh` checks the commands and the API's behaviour
 against a temporary PostgreSQL cluster. It needs the PostgreSQL server binaries,
 `curl`, and Go.
+
+## Display names
+
+Display names are unique without regard to letter case, which a unique index on
+`lower(display_name)` enforces. `memento student STUDENT_ID "Name"` answers
+`that display name is already used by another student` when another student has
+the name.
+
+The index is created by a migration that runs at startup. Where students
+already share a name, the student who registered first keeps it and every later
+one gets their student ID added, so `Ayu` and `ayu` become `Ayu` and
+`ayu 18225002`. The migration can then finish on existing data without a manual
+step, and those students can choose a new name afterwards.

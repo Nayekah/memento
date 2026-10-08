@@ -19,6 +19,30 @@ import (
 // example postgresql://memento@127.0.0.1:5432/postgres?sslmode=disable.
 func testDatabase(t *testing.T) *pgxpool.Pool {
 	t.Helper()
+	pool, err := openDatabase(context.Background(), config{databaseURL: createTestDatabase(t)})
+	if err != nil {
+		t.Fatalf("open the test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	return pool
+}
+
+// emptyTestDatabase is like testDatabase but applies no migrations, so a test
+// can bring the schema to a chosen version itself.
+func emptyTestDatabase(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	pool, err := pgxpool.New(context.Background(), createTestDatabase(t))
+	if err != nil {
+		t.Fatalf("connect to the test database: %v", err)
+	}
+	t.Cleanup(pool.Close)
+	return pool
+}
+
+// createTestDatabase creates an empty database for the calling test, drops it
+// when the test ends, and returns its connection URL.
+func createTestDatabase(t *testing.T) string {
+	t.Helper()
 	adminURL := os.Getenv("MEMENTO_TEST_DATABASE_URL")
 	if adminURL == "" {
 		t.Skip("MEMENTO_TEST_DATABASE_URL is not set")
@@ -41,12 +65,7 @@ func testDatabase(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("parse MEMENTO_TEST_DATABASE_URL: %v", err)
 	}
 	target.Path = "/" + name
-	pool, err := openDatabase(ctx, config{databaseURL: target.String()})
-	if err != nil {
-		t.Fatalf("open the test database: %v", err)
-	}
-	t.Cleanup(pool.Close)
-	return pool
+	return target.String()
 }
 
 func addStudents(t *testing.T, db *pgxpool.Pool, ids ...string) {
