@@ -62,13 +62,14 @@ worker. A per-student advisory lock protects the submission rate limit.
 
 - `POST /api/v1/vm-activation`
 - `POST /api/v1/submissions`
+- `PUT /api/v1/me/display-name`
 - `GET /api/v1/submissions/{id}`
 - `GET /api/v1/submissions/{id}/report`
 - `GET /api/v1/leaderboard`
 - `GET /api/v1/system/status`
 
-Submission and report endpoints require `X-Memento-Student` and
-`X-Memento-Token`. The leaderboard is global and uses each student's best
+Submission, report, and display-name endpoints require `X-Memento-Student`
+and `X-Memento-Token`. The leaderboard is global and uses each student's best
 completed score.
 
 ## Verification

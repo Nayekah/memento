@@ -53,7 +53,7 @@ install -m 0644 "$sandbox_root/src/bits.c" "$work/overlay/usr/local/share/mement
 install -m 0644 "$sandbox_root/vm/bg/wallpaper.jpg" "$work/overlay/usr/local/share/memento/wallpaper.jpg"
 install -m 0644 "$sandbox_root/vm/fonts/JetBrainsMono-Regular.ttf" "$work/overlay/usr/local/share/fonts/JetBrainsMono-Regular.ttf"
 install -m 0644 "$ca_bundle" "$work/overlay/usr/local/etc/ssl/certs/ca-certificates.crt"
-chmod 0755 "$work/overlay/sbin/autologin" "$work/overlay/sbin/memento-login" "$work/overlay/usr/local/bin/submit" "$work/overlay/usr/local/bin/status"
+chmod 0755 "$work/overlay/sbin/autologin" "$work/overlay/sbin/memento-login" "$work/overlay/usr/local/bin/submit" "$work/overlay/usr/local/bin/status" "$work/overlay/usr/local/bin/nickname"
 
 escaped_backend=$(printf '%s' "$backend_url" | sed 's/[&|]/\\&/g')
 find "$work/overlay" -type f -exec sed -i "s|__BACKEND_URL__|$escaped_backend|g" {} +
