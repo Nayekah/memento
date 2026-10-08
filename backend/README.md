@@ -64,6 +64,70 @@ docker compose run --rm api regrade SUBMISSION_ID
 The queue uses `FOR UPDATE SKIP LOCKED`, so one submission is claimed by one
 worker. A per-student advisory lock protects the submission rate limit.
 
+## Backups
+
+Back up the database and the files that cannot be regenerated. Every student
+token derives from `TOKEN_SECRET`, so a database backup alone is not enough to
+restore the service: without the secret, every token changes.
+
+```bash
+umask 077
+openssl rand -base64 32 > /secure/memento-backup.pass
+bash scripts/backup.sh \
+  --passphrase-file /secure/memento-backup.pass \
+  --output-dir /secure/backups \
+  --config .env --config scoreboard-config \
+  --keep 14
+```
+
+Each run writes `memento-db-<UTC time>.dump.gpg` and, because of `--config`,
+`memento-config-<UTC time>.tar.gz.gpg`, each with a `.sha256` file. The files are
+encrypted with GnuPG (AES-256, symmetric). Keep a copy of the passphrase file
+away from the server and away from the backups: without it they cannot be
+restored. Add more `--config` paths for anything else the server holds, such as
+`/etc/wireguard` and the cohort output directory with the student profiles.
+
+The dump runs inside the `postgres` container through `docker compose exec`, so
+that container has to be running and its client always matches the server
+version. Use `--direct` to run `pg_dump` from `PATH` instead; the connection then
+comes from the standard `PG*` variables. To schedule backups, call the script
+from cron or a systemd timer. The scripts target Linux hosts.
+
+### Restore drill
+
+Run the drill after the first backup and whenever the setup changes. It restores
+into a temporary database, prints row counts for the main tables, and drops the
+database again, so nothing that exists is touched:
+
+```bash
+bash scripts/restore.sh \
+  --passphrase-file /secure/memento-backup.pass \
+  --db-backup /secure/backups/memento-db-<UTC time>.dump.gpg \
+  --verify
+```
+
+### Restoring
+
+Stop everything that writes to the database, restore, then start it again.
+`--yes-overwrite` must repeat the database name. The backup is decrypted and
+authenticated before anything is changed.
+
+```bash
+docker compose stop proxy api worker
+bash scripts/restore.sh \
+  --passphrase-file /secure/memento-backup.pass \
+  --db-backup /secure/backups/memento-db-<UTC time>.dump.gpg \
+  --restore-into memento --yes-overwrite memento
+docker compose up -d
+```
+
+The configuration archive unpacks into a new or empty directory with
+`--config-backup FILE --extract-to DIR`; copy the files into place from there.
+
+`bash scripts/backup-test.sh` checks all of this against a temporary PostgreSQL
+cluster. It needs the PostgreSQL server binaries, `gpg`, and Go, and it exercises
+the Compose code path through a stub `docker`.
+
 ## API
 
 - `POST /api/v1/vm-activation`
