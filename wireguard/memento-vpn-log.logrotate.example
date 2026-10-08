@@ -1,0 +1,14 @@
+# Rotates the VPN event log. Install as /etc/logrotate.d/memento-vpn-events.
+#
+# The logger opens the file again for every sample, so it keeps writing to the
+# new file after a rotation and needs no signal. Keep the rotated files until
+# the grades are final and any appeal period has ended, then delete them.
+/var/log/memento-vpn-events.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0600 root root
+}

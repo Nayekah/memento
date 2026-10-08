@@ -1,0 +1,37 @@
+table inet memento_vpn {
+    # Each dropped student packet is a candidate for the kernel log, with the
+    # prefix memento-vpn-drop. A student address gets a small allowance (the
+    # limit below) so a noisy client cannot flood the journal. The set holds
+    # the remaining allowance of each address and is shared by both chains.
+    set drop_log {
+        type ipv4_addr
+        size 1024
+        flags dynamic
+    }
+
+    chain input {
+        type filter hook input priority -100; policy accept;
+
+        ct state established,related accept
+
+        # The only services a connected student can use on the VPN host are
+        # the local DNS answer and HTTPS. Caddy performs the API path check.
+        iifname "wg0" ip saddr 10.66.0.0/24 udp dport 53 accept
+        iifname "wg0" ip saddr 10.66.0.0/24 tcp dport 53 accept
+        iifname "wg0" ip saddr 10.66.0.0/24 tcp dport 443 accept
+        iifname "wg0" add @drop_log { ip saddr limit rate 6/minute burst 3 packets } counter log prefix "memento-vpn-drop: "
+        iifname "wg0" counter drop
+    }
+
+    chain forward {
+        type filter hook forward priority -100; policy accept;
+
+        ct state established,related accept
+
+        # Docker DNATs the published HTTPS port to the fixed Caddy address.
+        # No Internet, LAN, DNS, database, or grader forwarding is permitted.
+        iifname "wg0" oifname "br-*" ip daddr 172.30.0.4 tcp dport 443 accept
+        iifname "wg0" add @drop_log { ip saddr limit rate 6/minute burst 3 packets } counter log prefix "memento-vpn-drop: "
+        iifname "wg0" counter drop
+    }
+}

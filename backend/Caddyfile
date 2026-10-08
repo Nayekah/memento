@@ -1,3 +1,49 @@
 {$DOMAIN} {
-    reverse_proxy api:8067
+    encode zstd gzip
+    header X-Content-Type-Options nosniff
+
+    # Access log for reviewing an incident afterwards. The token header is a
+    # student's credential, so it is removed from every line.
+    log {
+        format filter {
+            request>headers>X-Memento-Token delete
+            wrap json
+        }
+    }
+
+    # The VPN is the exam network boundary. Public HTTPS reaches this proxy
+    # but receives 403; only clients in VPN_SUBNET can reach the API and the
+    # scoreboard.
+    @vpn remote_ip {$VPN_SUBNET}
+    handle @vpn {
+        # Students need activation, submission, their own submission
+        # status/report, their scoreboard name, and the VPN-only leaderboards. Admin, health,
+        # system status, and other routes remain unavailable to students.
+        handle /api/* {
+            @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/* /api/v1/me/display-name /api/v1/leaderboard /api/v1/practicums/*/leaderboard
+            handle @allowed {
+                reverse_proxy api:8067
+            }
+            respond 404
+        }
+
+        # Organizer-editable scoreboard settings, backgrounds, and music,
+        # mounted from SCOREBOARD_CONFIG_DIR. Revalidated so edits show up.
+        handle_path /config/* {
+            root * /srv/config
+            header Cache-Control "no-cache"
+            file_server
+        }
+
+        # Scoreboard single-page app.
+        handle {
+            root * /srv/scoreboard
+            @assets path /assets/*
+            header @assets Cache-Control "public, max-age=31536000, immutable"
+            try_files {path} /index.html
+            file_server
+        }
+    }
+
+    respond 403
 }
