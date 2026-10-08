@@ -189,3 +189,25 @@ already share a name, the student who registered first keeps it and every later
 one gets their student ID added, so `Ayu` and `ayu` become `Ayu` and
 `ayu 18225002`. The migration can then finish on existing data without a manual
 step, and those students can choose a new name afterwards.
+
+## Practicums
+
+Every submission belongs to a practicum, recorded in `submissions.practicum`.
+Everything submitted before the column existed is Data Lab, which is also the
+default, because Data Lab is the only practicum the grader handles.
+
+Each practicum has its own leaderboard at
+`GET /api/v1/practicums/{practicum}/leaderboard`, in the same shape as
+`GET /api/v1/leaderboard`, which stays the Data Lab board. The practicums the
+API knows are listed in `practicumIDs` in `backend/cmd/memento/practicums.go`:
+`datalab` and `bomblab`. An ID that is not listed answers `404`, and a listed
+practicum without scores returns an empty list. To open a new practicum, add
+its ID to the list. The scoreboard picks one in its configuration with the
+`practicum` and `endpoint` fields.
+
+Nothing accepts Bomb Lab submissions yet, so its board stays empty until the
+grader and a submission route for it exist.
+
+When the proxy lets VPN clients reach only an allowlist of API paths,
+`/api/v1/practicums/*/leaderboard` has to be added to it before the scoreboard
+can show a practicum other than Data Lab.

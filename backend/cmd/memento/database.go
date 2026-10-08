@@ -21,6 +21,7 @@ var migrations = []migration{
 	{version: "004_student_peers", sql: database.PeersMigration},
 	{version: "005_student_token_state", sql: database.TokensMigration},
 	{version: "006_unique_display_names", sql: database.DisplayNamesMigration},
+	{version: "007_submission_practicum", sql: database.PracticumMigration},
 }
 
 func openDatabase(ctx context.Context, cfg config) (*pgxpool.Pool, error) {

@@ -21,3 +21,6 @@ var TokensMigration string
 
 //go:embed migrations/display_names.sql
 var DisplayNamesMigration string
+
+//go:embed migrations/practicum.sql
+var PracticumMigration string
