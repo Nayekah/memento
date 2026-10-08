@@ -1,4 +1,4 @@
-import type { Entry, KeyedEntry } from "./types";
+import type { Challenge, Entry, KeyedEntry } from "./types";
 
 export interface Page {
   rows: KeyedEntry[];
@@ -58,6 +58,18 @@ export function computeDeltas(
     if (rank !== 0 || scoreChanged) deltas.set(entry.key, { rank, scoreChanged });
   }
   return deltas;
+}
+
+export type ChallengeState = "solved" | "partial" | "empty";
+
+/** Solved means every point of the challenge was earned; partial means some, but not all. */
+export function challengeState(challenge: Challenge): ChallengeState {
+  if (challenge.points >= challenge.max) return "solved";
+  return challenge.points > 0 ? "partial" : "empty";
+}
+
+export function countSolved(challenges: readonly Challenge[]): number {
+  return challenges.filter((challenge) => challengeState(challenge) === "solved").length;
 }
 
 export function growLimit(limit: number, total: number, pageSize: number): number {

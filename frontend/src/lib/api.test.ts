@@ -35,3 +35,38 @@ describe("fetchLeaderboard", () => {
     await expect(fetchLeaderboard("/x", undefined, reply(500, {}))).rejects.toThrow(ApiError);
   });
 });
+
+describe("normalizeLeaderboard challenges", () => {
+  const results = [
+    { name: "bitAnd", points: 3, max: 3 },
+    { name: "negate", points: 2, max: 4 },
+    { name: "tmin", points: 0, max: 3 },
+  ];
+
+  it("keeps the challenge results of an entry", () => {
+    const [out] = normalizeLeaderboard({ entries: [{ ...entry(1, "a"), challenges: results }] });
+    expect(out.challenges).toEqual(results);
+  });
+  it("leaves the key out when the backend sends none", () => {
+    const [out] = normalizeLeaderboard({ entries: [entry(1, "a")] });
+    expect("challenges" in out).toBe(false);
+  });
+  it.each([
+    ["an empty list", []],
+    ["not a list", "bitAnd"],
+    ["a null value", null],
+    ["an item that is not an object", [results[0], 7]],
+    ["a missing name", [{ points: 1, max: 2 }]],
+    ["a blank name", [{ name: " ", points: 1, max: 2 }]],
+    ["a fractional point", [{ name: "x", points: 1.5, max: 2 }]],
+    ["points above the maximum", [{ name: "x", points: 3, max: 2 }]],
+    ["negative points", [{ name: "x", points: -1, max: 2 }]],
+    ["a maximum of zero", [{ name: "x", points: 0, max: 0 }]],
+    ["one bad item among good ones", [results[0], { name: "x", points: "1", max: 2 }]],
+    ["more challenges than any problem set", Array.from({ length: 65 }, (_, i) => ({ name: `c${i}`, points: 0, max: 1 }))],
+  ])("drops %s but keeps the entry", (_label, challenges) => {
+    const [out] = normalizeLeaderboard({ entries: [{ ...entry(1, "a"), challenges }] });
+    expect(out).toEqual(entry(1, "a"));
+    expect("challenges" in out).toBe(false);
+  });
+});
