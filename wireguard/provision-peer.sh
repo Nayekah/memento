@@ -2,7 +2,7 @@
 set -eu
 
 usage() {
-    echo "Usage: $0 --student STUDENT_ID --address 10.66.0.N --endpoint HOST:51820 --output PATH [--server-conf PATH]" >&2
+    echo "Usage: $0 --student STUDENT_ID --address 10.66.0.N --endpoint HOST:51820 --output PATH [--server-conf PATH] [--token-file PATH]" >&2
     exit 2
 }
 
@@ -11,6 +11,8 @@ peer_address=""
 endpoint=""
 output=""
 server_conf=/etc/wireguard/wg0.conf
+token_file=""
+token=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -19,6 +21,7 @@ while [ "$#" -gt 0 ]; do
         --endpoint) endpoint=${2:?missing endpoint}; shift 2 ;;
         --output) output=${2:?missing output path}; shift 2 ;;
         --server-conf) server_conf=${2:?missing server config path}; shift 2 ;;
+        --token-file) token_file=${2:?missing token file}; shift 2 ;;
         -h|--help) usage ;;
         *) echo "Unknown argument: $1" >&2; usage ;;
     esac
@@ -35,6 +38,15 @@ case "$peer_address" in
     10.66.0.*) ;;
     *) echo 'Peer address must be inside 10.66.0.0/24.' >&2; exit 2 ;;
 esac
+# The Memento VM token goes into the profile as a comment, so each student
+# receives a single private file. Check it before any peer is created.
+if [ -n "$token_file" ]; then
+    token=$(sed -n '1p' "$token_file" | tr -d '[:space:]')
+    printf '%s\n' "$token" | grep -Eqx '[A-Z2-7]{4}-[A-Z2-7]{4}-[A-Z2-7]{4}' || {
+        echo "Token file does not contain a Memento token: $token_file" >&2
+        exit 2
+    }
+fi
 
 umask 077
 tmp_dir=$(mktemp -d)
@@ -66,7 +78,18 @@ PresharedKey = $preshared_key
 AllowedIPs = $peer_address/32
 EOF
 
-cat >"$output" <<EOF
+{
+if [ -n "$token" ]; then
+    cat <<EOF
+# Memento lab VM login
+# Student ID: $student_id
+# Token: $token
+# Type these at the lab VM login prompt. Keep this file private: it also
+# contains your VPN key.
+
+EOF
+fi
+cat <<EOF
 [Interface]
 PrivateKey = $client_private
 Address = $peer_address/32
@@ -82,6 +105,7 @@ Endpoint = $endpoint
 AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = 25
 EOF
+} >"$output"
 chmod 0600 "$output"
 echo "Created WireGuard client config: $output"
 echo "Import it on the student's managed laptop; do not commit or email it."

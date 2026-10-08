@@ -92,6 +92,12 @@ The command adds the peer to the running interface and persists it in
 `/etc/wireguard/wg0.conf`. Transfer the generated profile through a secure
 administrative channel and delete temporary copies after import.
 
+Add `--token-file PATH`, a file whose first line is the student's Memento token,
+to write the student ID and token as comments at the top of the profile. The
+student then needs only that file: WireGuard ignores the comments, and the ID
+and token are what the lab VM asks for at login. The token is checked against
+the expected format before any peer is created.
+
 Import the profile into the student's WireGuard client. It contains
 `AllowedIPs = 0.0.0.0/0, ::/0`, so the student's default route is the tunnel.
 On WireGuard for Windows, enable **Block untunneled traffic (kill-switch)**
@@ -118,13 +124,24 @@ sudo wireguard/provision-cohort.sh \
 This creates NIMs `18225001` through `18225120`, assigns VPN addresses
 `10.66.0.10` through `10.66.0.129`, registers each NIM in Memento, generates
 each token, adds each WireGuard peer, and writes one private `.conf` file per
-student. The start NIM, count, first VPN address, endpoint, and output
-directory are configurable. The manifest contains file paths, not token values;
-the individual `.token` files are mode `0600`.
+student. Each `.conf` starts with comment lines holding the student's ID and
+token, so a student imports that one file into WireGuard and types the ID and
+token at the lab VM login. The start NIM, count, first VPN address, endpoint,
+and output directory are configurable. The manifest contains file paths, not
+token values; the individual `.token` files are mode `0600`.
 
 Do not reuse a profile between students. If the command is interrupted, rerun
 it with the same output directory; existing student records, tokens, and peers
-are detected and retained while incomplete records continue.
+are detected and retained while incomplete records continue. A profile from an
+earlier run that lacks the token comment is kept as is and reported with a
+warning; give that student the matching `.token` file separately.
+
+The provisioning scripts have a self-contained test that needs `wg` but no root
+access, WireGuard interface, or Docker daemon:
+
+```sh
+bash wireguard/test/provision.test.sh
+```
 
 ## Verification
 

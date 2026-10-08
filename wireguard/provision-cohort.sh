@@ -96,13 +96,15 @@ for ((index = 0; index < count; index++)); do
             exit 1
         }
         echo "  peer already exists; kept existing config"
+        grep -q '^# Token: ' "$config_file" || echo "  warning: $config_file has no token comment; give the student $token_file separately" >&2
     else
         "$script_dir/provision-peer.sh" \
             --student "$nim" \
             --address "$vpn_ip" \
             --endpoint "$endpoint" \
             --output "$config_file" \
-            --server-conf "$server_conf"
+            --server-conf "$server_conf" \
+            --token-file "$token_file"
     fi
 
     if ! grep -q "^${nim}[[:space:]]" "$manifest"; then
