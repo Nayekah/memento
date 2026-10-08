@@ -187,6 +187,9 @@ func resultFromOutput(text string) map[string]any {
 	if autoresult := resultPattern.FindStringSubmatch(text); len(autoresult) == 2 {
 		result["autoresult"] = autoresult[1]
 	}
+	if challenges := parseChallenges(text); challenges != nil {
+		result["challenges"] = challenges
+	}
 	return result
 }
 
