@@ -22,15 +22,21 @@ Student VM -> Caddy HTTPS proxy -> API -> PostgreSQL queue -> Worker -> Grader
 
 ## Configuration
 
-Copy `.env.example` to `.env` and configure:
+Copy `.env.example` to `.env` and fill in every empty value:
 
 | Variable | Purpose |
 | --- | --- |
 | `DOMAIN` | Public domain used by Caddy |
-| `TOKEN_SECRET` | HMAC secret for student tokens |
-| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `TOKEN_SECRET` | HMAC secret for student tokens. Every token derives from it, so generate it once with `openssl rand -base64 32` and keep it |
+| `POSTGRES_PASSWORD` | PostgreSQL password. It is placed in a connection URL, so use URL-safe characters, for example `openssl rand -hex 24` |
 | `WORK_DIR` | Absolute Linux directory for temporary grader files |
 | `SUBMISSION_RATE_PER_MINUTE` | Per-student submission limit; `0` disables it |
+
+The example file ships without secret values. `docker compose` refuses to start
+while `TOKEN_SECRET` or `POSTGRES_PASSWORD` is empty, and the API and the
+`token` command refuse the token secret that earlier versions of the example
+file contained. A deployment that ran with those earlier values should be
+treated as compromised: choose new secrets, then issue new student tokens.
 
 ## Deployment
 
