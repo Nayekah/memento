@@ -19,6 +19,23 @@ bash scripts/build-iso.sh \
 
 The result is written to `output/memento-lab.iso`. The source ISO is used as the base system; the output ISO contains the Memento overlay and the configured backend URL.
 
+The build prints the SHA-256 of the base image. Pass the checksum that is published for it with `--source-sha256` to refuse a corrupted or substituted image; the build then stops before it extracts anything if the values differ.
+
+```bash
+bash scripts/build-iso.sh \
+  --source-iso /path/to/orkom.iso \
+  --source-sha256 SHA256_OF_THE_BASE_ISO \
+  --backend-url https://grader.example.edu
+```
+
+Next to the ISO the build writes `memento-lab.iso.sha256` in `sha256sum` format. Distribute it together with the ISO; a participant checks the download from the folder that holds both files:
+
+```bash
+sha256sum -c memento-lab.iso.sha256
+```
+
+`bash scripts/build-iso-test.sh` checks the build and its checksum handling on a generated minimal base image. It needs `7z`, `cpio`, `gzip`, `xorriso`, and `sha256sum`.
+
 Use a publicly reachable HTTPS backend URL for distribution. For a local VirtualBox test, use an address that is reachable from the guest, such as a host-only address or a publicly exposed test endpoint.
 
 ## Student workflow
@@ -35,7 +52,13 @@ cd ~/memento
 nano bits.c
 submit
 status SUBMISSION_ID
+nickname Your Name
 ```
+
+`nickname` changes the name shown on the scoreboard: up to 20 characters of
+letters, numbers, spaces, dots, underscores, and hyphens, starting with a letter
+or number. Names are unique regardless of case and cannot be another student's
+ID.
 
 `submit` always uploads `~/memento/bits.c`; it cannot select another file. It prints a submission ID while the job is queued. `status` uses that ID to display the grading verdict and score. The backend accepts only a file named `bits.c` and grades it in an isolated container.
 

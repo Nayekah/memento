@@ -12,3 +12,15 @@ var VMMigration string
 
 //go:embed migrations/queue.sql
 var QueueMigration string
+
+//go:embed migrations/peers.sql
+var PeersMigration string
+
+//go:embed migrations/tokens.sql
+var TokensMigration string
+
+//go:embed migrations/display_names.sql
+var DisplayNamesMigration string
+
+//go:embed migrations/practicum.sql
+var PracticumMigration string

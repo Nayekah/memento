@@ -10,7 +10,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const (
+	uniqueViolation          = "23505"
+	deviceIDUniqueConstraint = "vm_activations_device_id_key"
 )
 
 func tokenFor(secret, student string) string {
@@ -29,10 +35,20 @@ func authenticate(r *http.Request, cfg config) (string, error) {
 	if !studentIDPattern.MatchString(student) {
 		return "", errors.New("invalid student identifier")
 	}
+	state, err := lookupTokenState(r.Context(), cfg, student)
+	if err != nil {
+		return "", err
+	}
 	token := normalizeToken(r.Header.Get("X-Memento-Token"))
-	expected := normalizeToken(tokenFor(cfg.secret, student))
+	expected := normalizeToken(tokenForVersion(cfg.secret, student, state.version))
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
 		return "", errors.New("invalid submission token")
+	}
+	if state.disabled {
+		return "", errStudentDisabled
+	}
+	if err := checkPeer(r, cfg, student); err != nil {
+		return "", err
 	}
 	return student, nil
 }
@@ -51,6 +67,13 @@ func activateVM(ctx context.Context, db *pgxpool.Pool, student, deviceID string)
 		ON CONFLICT (student_id) DO UPDATE SET last_seen_at = now()
 		WHERE vm_activations.device_id = EXCLUDED.device_id`, student, deviceID)
 	if err != nil {
+		// The ON CONFLICT clause covers a student who is already bound. A device
+		// that belongs to a different student violates the unique index on
+		// device_id instead.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolation && pgErr.ConstraintName == deviceIDUniqueConstraint {
+			return errDeviceInUse
+		}
 		return err
 	}
 	if result.RowsAffected() == 0 {

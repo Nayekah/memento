@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
@@ -47,7 +48,7 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 		}
 		if err := activateVM(r.Context(), db, student, request.DeviceID); err != nil {
 			switch {
-			case errors.Is(err, errActivationBound):
+			case errors.Is(err, errActivationBound), errors.Is(err, errDeviceInUse):
 				writeError(w, http.StatusConflict, err.Error())
 			case errors.Is(err, errStudentNotRegistered):
 				writeError(w, http.StatusForbidden, err.Error())
@@ -57,6 +58,38 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 			return
 		}
 		writeJSON(w, http.StatusCreated, map[string]string{"status": "activated", "student_id": student})
+	})
+	mux.HandleFunc("PUT /api/v1/me/display-name", func(w http.ResponseWriter, r *http.Request) {
+		student, err := authenticate(r, cfg)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+		var request struct {
+			DisplayName string `json:"display_name"`
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 1024)
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid display name request")
+			return
+		}
+		name, err := normalizeDisplayName(request.DisplayName)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err := setDisplayName(r.Context(), db, student, name); err != nil {
+			switch {
+			case errors.Is(err, errDisplayNameTaken):
+				writeError(w, http.StatusConflict, err.Error())
+			case errors.Is(err, errStudentNotRegistered):
+				writeError(w, http.StatusForbidden, err.Error())
+			default:
+				writeError(w, http.StatusInternalServerError, "could not change display name")
+			}
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"display_name": name})
 	})
 	mux.HandleFunc("POST /api/v1/submissions", func(w http.ResponseWriter, r *http.Request) {
 		student, err := authenticate(r, cfg)
@@ -112,6 +145,7 @@ func serveAPI(cfg config, db *pgxpool.Pool) error {
 		writeJSON(w, http.StatusOK, value)
 	})
 	mux.HandleFunc("GET /api/v1/leaderboard", func(w http.ResponseWriter, r *http.Request) { serveLeaderboard(w, r, db) })
+	mux.HandleFunc("GET /api/v1/practicums/{practicum}/leaderboard", practicumLeaderboardHandler(db))
 	return http.ListenAndServe(":8067", securityHeaders(mux))
 }
 
@@ -138,24 +172,37 @@ func submissionForRequest(w http.ResponseWriter, r *http.Request, cfg config, db
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request, db *pgxpool.Pool) {
-	rows, err := db.Query(r.Context(), `WITH best AS (SELECT DISTINCT ON (s.student_id) s.student_id, s.score, s.max_score, s.completed_at FROM submissions s WHERE s.status = 'completed' AND s.score IS NOT NULL ORDER BY s.student_id, s.score DESC, s.completed_at ASC) SELECT RANK() OVER (ORDER BY b.score DESC, b.completed_at ASC), st.display_name, b.score, b.max_score FROM best b JOIN students st ON st.id = b.student_id ORDER BY 1, st.display_name`)
+	serveLeaderboardFor(w, r, db, defaultPracticum)
+}
+
+func serveLeaderboardFor(w http.ResponseWriter, r *http.Request, db *pgxpool.Pool, practicum string) {
+	rows, err := db.Query(r.Context(), `WITH best AS (SELECT DISTINCT ON (s.student_id) s.student_id, s.score, s.max_score, s.completed_at, s.result -> 'challenges' AS challenges FROM submissions s WHERE s.status = 'completed' AND s.score IS NOT NULL AND s.practicum = $1 ORDER BY s.student_id, s.score DESC, s.completed_at ASC) SELECT RANK() OVER (ORDER BY b.score DESC, b.completed_at ASC), st.display_name, b.score, b.max_score, b.challenges FROM best b JOIN students st ON st.id = b.student_id ORDER BY 1, st.display_name`, practicum)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not read leaderboard")
 		return
 	}
 	defer rows.Close()
 	type entry struct {
-		Rank     int    `json:"rank"`
-		Name     string `json:"name"`
-		Score    int    `json:"score"`
-		MaxScore int    `json:"max_score"`
+		Rank       int               `json:"rank"`
+		Name       string            `json:"name"`
+		Score      int               `json:"score"`
+		MaxScore   int               `json:"max_score"`
+		Challenges []challengeResult `json:"challenges,omitempty"`
 	}
 	entries := make([]entry, 0)
 	for rows.Next() {
 		var e entry
-		if err := rows.Scan(&e.Rank, &e.Name, &e.Score, &e.MaxScore); err != nil {
+		var challenges []byte
+		if err := rows.Scan(&e.Rank, &e.Name, &e.Score, &e.MaxScore, &challenges); err != nil {
 			writeError(w, http.StatusInternalServerError, "could not read leaderboard")
 			return
+		}
+		if len(challenges) > 0 && string(challenges) != "null" {
+			// One unreadable breakdown must not take the whole board down.
+			if err := json.Unmarshal(challenges, &e.Challenges); err != nil {
+				log.Printf("leaderboard: ignoring unreadable challenges at rank %d: %v", e.Rank, err)
+				e.Challenges = nil
+			}
 		}
 		entries = append(entries, e)
 	}

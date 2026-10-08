@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+name="$*"
+if [ -z "${name// /}" ]; then
+    echo 'usage: nickname NEW NAME' >&2
+    echo 'Up to 20 characters: letters, numbers, spaces, dots, underscores, and hyphens.' >&2
+    exit 1
+fi
+set -a
+. "$HOME/.config/memento/auth.env"
+set +a
+escaped=${name//\\/\\\\}
+escaped=${escaped//\"/\\\"}
+if ! response=$(curl --fail-with-body --silent --show-error -X PUT -H "X-Memento-Student: $STUDENT_ID" -H "X-Memento-Token: $TOKEN" -H 'Content-Type: application/json' --data "{\"display_name\":\"$escaped\"}" "$BACKEND_URL/api/v1/me/display-name" 2>&1); then
+    message=$(printf '%s\n' "$response" | sed -n 's/.*"error": *"\([^"]*\)".*/\1/p')
+    echo "Could not change your scoreboard name: ${message:-$response}" >&2
+    exit 1
+fi
+printf 'Scoreboard name is now: %s\n' "$(printf '%s\n' "$response" | sed -n 's/.*"display_name": *"\([^"]*\)".*/\1/p')"

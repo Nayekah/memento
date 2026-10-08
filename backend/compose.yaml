@@ -24,6 +24,8 @@ services:
       DATABASE_URL: postgresql://memento:${POSTGRES_PASSWORD}@postgres:5432/memento?sslmode=disable
       TOKEN_SECRET: ${TOKEN_SECRET:?required}
       SUBMISSION_RATE_PER_MINUTE: ${SUBMISSION_RATE_PER_MINUTE:-8}
+      PEER_BINDING: ${PEER_BINDING:-off}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-172.30.0.4}
     expose:
       - "8067"
     depends_on:

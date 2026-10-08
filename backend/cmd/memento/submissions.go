@@ -175,6 +175,11 @@ func grade(ctx context.Context, cfg config, value *claimedSubmission) (map[strin
 	if err != nil {
 		return nil, fmt.Errorf("grader failed: %w\n%s", err, text)
 	}
+	return resultFromOutput(text), nil
+}
+
+// resultFromOutput turns the grader's output into the result stored with a submission.
+func resultFromOutput(text string) map[string]any {
 	result := map[string]any{"log": text}
 	if score := scorePattern.FindStringSubmatch(text); len(score) == 2 {
 		result["score"] = score[1]
@@ -182,7 +187,10 @@ func grade(ctx context.Context, cfg config, value *claimedSubmission) (map[strin
 	if autoresult := resultPattern.FindStringSubmatch(text); len(autoresult) == 2 {
 		result["autoresult"] = autoresult[1]
 	}
-	return result, nil
+	if challenges := parseChallenges(text); challenges != nil {
+		result["challenges"] = challenges
+	}
+	return result
 }
 
 func submissionReport(value submission) string {
