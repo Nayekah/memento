@@ -18,6 +18,7 @@ var migrations = []migration{
 	{version: "001_initial", sql: database.InitMigration},
 	{version: "002_vm_activations", sql: database.VMMigration},
 	{version: "003_queue_hardening", sql: database.QueueMigration},
+	{version: "004_student_peers", sql: database.PeersMigration},
 }
 
 func openDatabase(ctx context.Context, cfg config) (*pgxpool.Pool, error) {

@@ -40,6 +40,9 @@ func authenticate(r *http.Request, cfg config) (string, error) {
 	if subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
 		return "", errors.New("invalid submission token")
 	}
+	if err := checkPeer(r, cfg, student); err != nil {
+		return "", err
+	}
 	return student, nil
 }
 

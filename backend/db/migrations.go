@@ -12,3 +12,6 @@ var VMMigration string
 
 //go:embed migrations/queue.sql
 var QueueMigration string
+
+//go:embed migrations/peers.sql
+var PeersMigration string
