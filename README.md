@@ -54,6 +54,7 @@ and `status` commands.
 - PostgreSQL submission queue and global leaderboard
 - Docker-isolated legacy lab grader
 - Caddy reverse proxy with configurable TLS domain
+- React and TypeScript arcade scoreboard served by the same proxy
 - Packer-built VirtualBox OVA and VMware VMX/VMDK artifacts
 - Husky pre-commit hook with Go formatting and static checks
 
@@ -64,6 +65,7 @@ and `status` commands.
 - Per-student VM activation binding
 - Submission history, detailed verdicts, and scores
 - Global leaderboard based on every student's best completed submission
+- Live scoreboard for one configurable practicum, with countdown, backgrounds, and an optional playlist
 - PostgreSQL queue with concurrent workers and `FOR UPDATE SKIP LOCKED`
 - Per-student submission rate limit
 - Sandboxed grading with no network, restricted resources, and a read-only root filesystem
@@ -74,7 +76,7 @@ and `status` commands.
 ```text
 backend/   Go API, PostgreSQL migrations, Caddy proxy, worker, and grader image
 sandbox/   Packer VM build, first-boot activation, and legacy lab sources
-frontend/  Reserved for the future leaderboard interface
+frontend/  Arcade scoreboard (Vite, React, TypeScript) built into the Caddy image
 scripts/   Repository lint workflow used by Husky
 ```
 
@@ -96,14 +98,18 @@ Requirements:
 ```bash
 cd backend
 cp .env.example .env
-mkdir -p /srv/memento/grader-work
-docker compose build grader-image api worker
+mkdir -p /srv/memento/grader-work scoreboard-config
+cp ../frontend/config.example.json scoreboard-config/config.json
+docker compose build grader-image api worker proxy
 docker compose up -d
 ```
 
-Caddy obtains a TLS certificate for the configured domain and forwards HTTPS requests
-to the Go API on its internal port, `8067`. Student VPN traffic is limited to the
-grading API; PostgreSQL is never published.
+Caddy obtains a TLS certificate for the configured domain, serves the
+scoreboard, and forwards `/api/*` requests to the Go API on its internal port,
+`8067`. Student VPN traffic is limited to the grading API and the scoreboard;
+PostgreSQL is never published. Edit `scoreboard-config/config.json` to change
+the title, message, deadlines, backgrounds, or music without a rebuild; see
+[frontend/README.md](frontend/README.md).
 
 Register a student and generate a private activation token:
 

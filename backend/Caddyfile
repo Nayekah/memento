@@ -1,16 +1,39 @@
 {$DOMAIN} {
+    encode zstd gzip
+    header X-Content-Type-Options nosniff
+
     # The VPN is the exam network boundary. Public HTTPS reaches this proxy
-    # but receives 403; only clients in VPN_SUBNET can reach the API.
+    # but receives 403; only clients in VPN_SUBNET can reach the API and the
+    # scoreboard.
     @vpn remote_ip {$VPN_SUBNET}
     handle @vpn {
         # Students need activation, submission, and their own submission
         # status/report, and the VPN-only global leaderboard. Admin, health,
         # system status, and other routes remain unavailable to students.
-        @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/* /api/v1/leaderboard
-        handle @allowed {
-            reverse_proxy api:8067
+        handle /api/* {
+            @allowed path /api/v1/vm-activation /api/v1/submissions /api/v1/submissions/* /api/v1/leaderboard
+            handle @allowed {
+                reverse_proxy api:8067
+            }
+            respond 404
         }
-        respond 404
+
+        # Organizer-editable scoreboard settings, backgrounds, and music,
+        # mounted from SCOREBOARD_CONFIG_DIR. Revalidated so edits show up.
+        handle_path /config/* {
+            root * /srv/config
+            header Cache-Control "no-cache"
+            file_server
+        }
+
+        # Scoreboard single-page app.
+        handle {
+            root * /srv/scoreboard
+            @assets path /assets/*
+            header @assets Cache-Control "public, max-age=31536000, immutable"
+            try_files {path} /index.html
+            file_server
+        }
     }
 
     respond 403

@@ -38,7 +38,9 @@ services:
     restart: unless-stopped
 
   proxy:
-    image: caddy:2-alpine
+    build:
+      context: ../frontend
+    image: memento-proxy:local
     networks:
       memento:
         ipv4_address: 172.30.0.4
@@ -53,6 +55,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${SCOREBOARD_CONFIG_DIR:-./scoreboard-config}:/srv/config:ro
       - caddy-data:/data
       - caddy-config:/config
     restart: unless-stopped

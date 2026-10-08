@@ -33,6 +33,16 @@ fi
     "$go_binary" vet ./cmd/memento ./db
 )
 
+if command -v npm >/dev/null 2>&1 && [ -d frontend/node_modules ]; then
+    (
+        cd frontend
+        npm run --silent typecheck
+        npm run --silent test
+    )
+else
+    echo 'Frontend dependencies are not installed; frontend checks were skipped.'
+fi
+
 if command -v shellcheck >/dev/null 2>&1; then
     shellcheck backend/grader/grade.sh backend/scripts/smoke-test.sh \
         sandbox/scripts/build-iso.sh sandbox/vm/overlay/sbin/autologin \
