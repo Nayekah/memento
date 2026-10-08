@@ -211,3 +211,37 @@ grader and a submission route for it exist.
 When the proxy lets VPN clients reach only an allowlist of API paths,
 `/api/v1/practicums/*/leaderboard` has to be added to it before the scoreboard
 can show a practicum other than Data Lab.
+
+## Challenge results
+
+The Data Lab driver ends its output with one row per puzzle and a `Score =`
+line. When grading completes, the worker reads that table and stores it in the
+submission's result as `challenges`, one entry per puzzle in the order the
+driver printed them:
+
+```json
+{"challenges": [{"name": "bitAnd", "points": 3, "max": 3}, {"name": "negate", "points": 2, "max": 4}]}
+```
+
+`points` adds the correctness and performance points the student earned for the
+puzzle, and `max` adds the correctness rating to the performance rating. The
+driver reports the performance rating only as a total, so it is divided evenly
+across the puzzles. A puzzle is solved when `points` equals `max`, partly done
+when it has some points but not all (for example, a correct answer that uses
+more operators than allowed), and unsolved when it has none. The number of
+puzzles comes from the problem set in the grader image, so the practicum and
+its dry run need no extra configuration.
+
+The leaderboard returns the list for each student's best submission as
+`challenges` in the entry. The field is left out when there is nothing to
+return. Ranking and the other fields do not change.
+
+The parser accepts only a complete table whose rows add up to the totals line.
+If the driver's output format changes, for example with a new problem set, the
+field is left out instead of being guessed, and the scoreboard falls back to
+its score bar. Update `backend/cmd/memento/challenges.go` and the captured
+output in `backend/cmd/memento/testdata` to match.
+
+Submissions graded before this feature have no `challenges`. Running
+`memento regrade SUBMISSION_ID` queues one for grading again, and it stays off
+the board until the worker has finished it.
